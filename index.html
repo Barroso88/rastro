@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rastro — o teu arquivo de aprendizagem</title>
+    <meta name="description" content="Guarda o caminho dos teus projetos para voltares a encontrar qualquer resposta." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#"><span class="brand-mark">↗</span><span>rastro</span></a>
+        <button class="new-note" id="new-note"><span>＋</span> Nova nota <kbd>N</kbd></button>
+        <nav class="main-nav" aria-label="Navegação principal">
+          <a class="nav-item active" href="#"><span>▦</span> Visão geral</a>
+          <a class="nav-item" href="#"><span>◷</span> Recentes <b>4</b></a>
+          <a class="nav-item" href="#"><span>★</span> Favoritos</a>
+          <a class="nav-item" href="#diy" id="diy-link"><span>⌁</span> DIY <b>novo</b></a>
+        </nav>
+        <div class="side-label">Os meus projetos <button aria-label="Adicionar projeto">＋</button></div>
+        <div class="projects">
+          <a href="#" class="project active"><i class="dot coral"></i> Loja online <span>12</span></a>
+          <a href="#" class="project"><i class="dot blue"></i> Portfolio pessoal <span>8</span></a>
+          <a href="#" class="project"><i class="dot yellow"></i> Casa inteligente <span>5</span></a>
+        </div>
+        <div class="sidebar-bottom">
+          <a class="nav-item" href="#"><span>⌕</span> Atalhos</a>
+          <a class="nav-item" href="#"><span>⚙</span> Definições</a>
+          <div class="profile"><div class="avatar">AB</div><div><strong>André Barroso</strong><small>Plano pessoal</small></div><span>•••</span></div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Os meus projetos</span><strong>/</strong><span class="muted">Visão geral</span></div>
+          <div class="top-actions"><button class="search-button" id="search-button">⌕ <span>Pesquisar em tudo...</span><kbd>⌘ K</kbd></button><button class="icon-button" id="theme-toggle" aria-label="Alternar tema">☾</button><button class="icon-button">?</button><div class="mini-avatar">AB</div></div>
+        </header>
+
+        <section class="hero">
+          <div><p class="eyebrow">QUARTA-FEIRA, 30 DE SETEMBRO</p><h1>Continua de onde<br><em>ficaste.</em></h1><p class="hero-copy">O teu conhecimento, organizado para quando precisares dele.</p></div>
+          <div class="hero-orbit"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><div class="orbit-star">✦</div><span class="orbit-chip chip-one">ideias</span><span class="orbit-chip chip-two">código</span><span class="orbit-chip chip-three">notas</span></div>
+        </section>
+
+        <section class="stats-grid">
+          <div class="stat-card"><span class="stat-icon coral-icon">↗</span><div><strong>25</strong><span>notas guardadas</span></div><small>+4 este mês</small></div>
+          <div class="stat-card"><span class="stat-icon yellow-icon">◒</span><div><strong>3</strong><span>projetos ativos</span></div><small>1 em pausa</small></div>
+          <div class="stat-card"><span class="stat-icon blue-icon">⌁</span><div><strong>12</strong><span>tópicos explorados</span></div><small>+3 esta semana</small></div>
+        </section>
+
+        <section class="content-grid" id="diy">
+          <div class="section-block recent-block">
+            <div class="section-heading"><div><h2>Retoma o fio</h2><p>As notas onde estiveste mais recentemente.</p></div><a href="#">Ver todas <span>→</span></a></div>
+            <div class="note-list">
+              <article class="note-card featured" data-title="Configurar autenticação com Supabase"><div class="note-top"><span class="tag coral-tag">LOJA ONLINE</span><button class="more">•••</button></div><h3>Configurar autenticação<br>com Supabase</h3><p>O que aprendi sobre sessões, middleware e rotas protegidas.</p><div class="note-footer"><span>Há 2 horas</span><span class="read-progress"><i></i></span><span>8 min</span></div></article>
+              <article class="note-card" data-title="Deploy de uma app Next.js na Vercel"><div class="note-top"><span class="tag blue-tag">PORTFOLIO PESSOAL</span><button class="more">•••</button></div><h3>Deploy de uma app<br>Next.js na Vercel</h3><p>Variáveis de ambiente e os pequenos detalhes que quase esqueci.</p><div class="note-footer"><span>Ontem</span><span class="read-progress"><i style="width: 38%"></i></span><span>5 min</span></div></article>
+              <article class="note-card" data-title="Ligar sensores com MQTT"><div class="note-top"><span class="tag yellow-tag">CASA INTELIGENTE</span><button class="more">•••</button></div><h3>Ligar sensores<br>com MQTT</h3><p>Notas rápidas do setup do broker e da primeira mensagem.</p><div class="note-footer"><span>Há 3 dias</span><span class="read-progress"><i style="width: 82%"></i></span><span>4 min</span></div></article>
+            </div>
+          </div>
+          <aside class="right-column">
+            <div class="section-heading"><div><h2>Atividade</h2><p>O teu rastro esta semana.</p></div><button class="icon-button">•••</button></div>
+            <div class="activity-card"><div class="activity-chart"><div class="chart-labels"><span>8</span><span>4</span><span>0</span></div><div class="chart-area"><i class="grid-line line-a"></i><i class="grid-line line-b"></i><svg viewBox="0 0 300 120" preserveAspectRatio="none"><path d="M0 94 C22 90, 25 70, 47 76 S69 90, 84 65 S108 50, 124 63 S145 78, 161 45 S186 58, 198 48 S218 20, 233 40 S259 54, 273 28 S288 22, 300 8" fill="none" stroke="#e86f51" stroke-width="3"/><path d="M0 94 C22 90, 25 70, 47 76 S69 90, 84 65 S108 50, 124 63 S145 78, 161 45 S186 58, 198 48 S218 20, 233 40 S259 54, 273 28 S288 22, 300 8 V120 H0Z" fill="url(#fade)" opacity=".28"/><defs><linearGradient id="fade" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#e86f51"/><stop offset="1" stop-color="#e86f51" stop-opacity="0"/></linearGradient></defs></svg></div></div><div class="chart-days"><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span><span>dom</span></div><div class="activity-total"><strong>17</strong><span>sessões de aprendizagem<br>nos últimos 7 dias</span></div></div>
+            <div class="prompt-card"><span class="prompt-mark">✦</span><div><strong>O que aprendeste hoje?</strong><p>Guarda uma pequena nota antes de te esqueceres.</p></div><button id="quick-note">＋</button></div>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <div class="modal-backdrop" id="modal"><div class="modal"><button class="modal-close" id="close-modal">×</button><span class="modal-kicker">NOVA NOTA</span><h2>Guarda o teu próximo passo.</h2><p>Uma nota rápida agora pode poupar-te horas mais tarde.</p><label>Título<input id="note-title" type="text" placeholder="Ex.: Corrigir erro de CORS" /></label><label>Nota<textarea placeholder="O que queres lembrar? Inclui links, comandos ou contexto..."></textarea></label><div class="modal-actions"><button class="cancel" id="cancel-modal">Cancelar</button><button class="save" id="save-note">Guardar nota <span>→</span></button></div></div></div>
+    <div class="modal-backdrop" id="github-modal"><div class="modal"><button class="modal-close" id="close-github">×</button><span class="modal-kicker">IMPORTAR DIY</span><h2>Transforma um GitHub num guia.</h2><p>Cola um repositório público e organizamos as instruções em português de Portugal.</p><label>URL do GitHub<input id="github-url" type="url" placeholder="https://github.com/utilizador/projeto" /></label><div class="import-hint">A app usa o README e os ficheiros de documentação públicos. O link original fica guardado.</div><div class="modal-actions"><button class="cancel" id="cancel-github">Cancelar</button><button class="save" id="import-github">Organizar guia <span>→</span></button></div></div></div>
+    <div class="toast" id="toast">Nota guardada no teu rastro ✓</div>
+    <script src="app.js"></script>
+  </body>
+</html>

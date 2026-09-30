@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "omnirush.ai",
+    "createdAt": 1790639421517,
+    "preset": "starter"
+  },
+  "authorizedRoots": [
+    "/Users/andrebarroso/omnirush.ai"
+  ],
+  "reload": null
+}
