@@ -16,6 +16,16 @@ const viewVideo = document.querySelector('#view-video');
 const viewCopyBtn = document.querySelector('#view-copy-btn');
 const viewDeleteBtn = document.querySelector('#view-delete-btn');
 
+// Vistas da aplicação
+const dashboardView = document.querySelector('#dashboard-view');
+const categoryView = document.querySelector('#category-view');
+const categoryPageTitle = document.querySelector('#category-page-title');
+const categoryPageSubtitle = document.querySelector('#category-page-subtitle');
+const categoryNotesContainer = document.querySelector('#category-notes-container');
+const categoryAddBtn = document.querySelector('#category-add-btn');
+const viewGridBtn = document.querySelector('#view-grid-btn');
+const viewListBtn = document.querySelector('#view-list-btn');
+
 const noteList = document.querySelector('#note-list');
 const statTotalNotes = document.querySelector('#stat-total-notes');
 const statTotalProjects = document.querySelector('#stat-total-projects');
@@ -30,6 +40,8 @@ const projectSuggestions = document.querySelector('#project-suggestions');
 
 let allNotes = [];
 let currentFilter = 'all';
+let currentActiveView = 'dashboard'; // 'dashboard' | 'category'
+let currentDisplayMode = localStorage.getItem('rastro-view-mode') || 'grid'; // 'grid' | 'list'
 let currentViewingNote = null;
 
 // Formatação da data atual no cabeçalho
@@ -56,12 +68,20 @@ const closeViewModal = () => {
   currentViewingNote = null;
 };
 
-// Eventos de fecho
-document.querySelector('#new-note')?.addEventListener('click', () => openModal(currentFilter !== 'all' ? currentFilter : 'Geral'));
+// Eventos dos botões de criação
+document.querySelector('#new-note')?.addEventListener('click', () => {
+  openModal(currentFilter !== 'all' ? currentFilter : 'Geral');
+});
 document.querySelector('#quick-note')?.addEventListener('click', () => openModal());
+categoryAddBtn?.addEventListener('click', () => {
+  openModal(currentFilter !== 'all' ? currentFilter : 'Geral');
+});
+
 document.querySelector('#add-project-btn')?.addEventListener('click', () => {
   const name = window.prompt('Nome do novo projeto:');
-  if (name?.trim()) openModal(name.trim());
+  if (name?.trim()) {
+    openModal(name.trim());
+  }
 });
 
 document.querySelector('#diy-link')?.addEventListener('click', (event) => {
@@ -81,6 +101,62 @@ document.querySelector('#close-view')?.addEventListener('click', closeViewModal)
 document.querySelector('#close-view-btn')?.addEventListener('click', closeViewModal);
 viewModal.addEventListener('click', (event) => { if (event.target === viewModal) closeViewModal(); });
 
+// Alternador de Grelha vs Lista na página de categoria
+function updateViewModeButtons() {
+  if (viewGridBtn && viewListBtn) {
+    viewGridBtn.classList.toggle('active', currentDisplayMode === 'grid');
+    viewListBtn.classList.toggle('active', currentDisplayMode === 'list');
+  }
+}
+updateViewModeButtons();
+
+viewGridBtn?.addEventListener('click', () => {
+  currentDisplayMode = 'grid';
+  localStorage.setItem('rastro-view-mode', 'grid');
+  updateViewModeButtons();
+  renderCategoryNotes();
+});
+
+viewListBtn?.addEventListener('click', () => {
+  currentDisplayMode = 'list';
+  localStorage.setItem('rastro-view-mode', 'list');
+  updateViewModeButtons();
+  renderCategoryNotes();
+});
+
+// Navegação entre Visão Geral (Dashboard) e Página de Categoria
+function showDashboardView() {
+  currentActiveView = 'dashboard';
+  currentFilter = 'all';
+  if (dashboardView) dashboardView.style.display = 'block';
+  if (categoryView) categoryView.style.display = 'none';
+
+  document.querySelector('#nav-overview')?.classList.add('active');
+  document.querySelectorAll('.projects .project').forEach(p => p.classList.remove('active'));
+  if (breadcrumbCurrent) breadcrumbCurrent.textContent = 'Visão geral';
+
+  renderDashboardRecentNotes();
+}
+
+function showCategoryView(projectName) {
+  currentActiveView = 'category';
+  currentFilter = projectName;
+  if (dashboardView) dashboardView.style.display = 'none';
+  if (categoryView) categoryView.style.display = 'block';
+
+  document.querySelector('#nav-overview')?.classList.remove('active');
+  document.querySelectorAll('.projects .project').forEach(p => {
+    const isTarget = (p.dataset.filter || '').toLowerCase() === projectName.toLowerCase();
+    p.classList.toggle('active', isTarget);
+  });
+
+  const displayTitle = projectName === 'all' ? 'Todos os Projetos' : projectName;
+  if (categoryPageTitle) categoryPageTitle.textContent = displayTitle;
+  if (breadcrumbCurrent) breadcrumbCurrent.textContent = displayTitle;
+
+  renderCategoryNotes();
+}
+
 // Atalhos de teclado
 document.addEventListener('keydown', (event) => {
   const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
@@ -98,7 +174,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Estilos de etiquetas baseados no nome do projeto
-const TAG_COLORS = ['coral', 'blue', 'yellow', 'coral'];
+const TAG_COLORS = ['coral', 'blue', 'yellow', 'green'];
 function getTagColorClass(project) {
   const norm = String(project || '').toLowerCase();
   if (norm === 'diy') return 'coral-tag';
@@ -129,7 +205,7 @@ function calculateReadTime(text) {
   return `${minutes} min`;
 }
 
-// Renderizador simples e seguro de Markdown
+// Renderizador Markdown
 function renderMarkdown(text) {
   if (!text) return '<p><em>Sem conteúdo adicional.</em></p>';
 
@@ -205,7 +281,6 @@ function openViewModal(note) {
     viewVideo.innerHTML = '';
   }
 
-  // Conteúdo formatado
   viewContent.innerHTML = renderMarkdown(note.content);
   viewModal.classList.add('open');
 }
@@ -222,12 +297,11 @@ viewCopyBtn?.addEventListener('click', () => {
 viewDeleteBtn?.addEventListener('click', () => {
   if (!currentViewingNote) return;
   const noteId = currentViewingNote.id;
-  const card = document.querySelector(`.note-card[data-id="${noteId}"]`);
-  deleteNote(noteId, card);
+  deleteNote(noteId);
   closeViewModal();
 });
 
-// Criar elemento de cartão para a lista
+// Criar elemento de Cartão (Modo Grelha)
 function createNoteElement(note, isFirst = false) {
   const card = document.createElement('article');
   card.className = `note-card ${isFirst ? 'featured' : ''}`;
@@ -266,19 +340,53 @@ function createNoteElement(note, isFirst = false) {
     </div>
   `;
 
-  // Clique no cartão para abrir a leitura completa
   card.addEventListener('click', () => openViewModal(note));
 
-  // Impedir propagação no botão de eliminar e links externos
   card.querySelector('.btn-delete')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    deleteNote(note.id, card);
+    deleteNote(note.id);
   });
   card.querySelectorAll('.youtube-thumb, .youtube-link').forEach(link => {
     link.addEventListener('click', (e) => e.stopPropagation());
   });
 
   return card;
+}
+
+// Criar elemento de Linha (Modo Lista)
+function createNoteListRow(note) {
+  const row = document.createElement('div');
+  row.className = 'note-list-row';
+  row.dataset.id = note.id;
+
+  const tagClass = getTagColorClass(note.project);
+  const projectLabel = escapeHtml((note.project || 'Geral').toUpperCase());
+  const relativeTime = formatRelativeTime(note.updated_at || note.created_at);
+  const readTime = calculateReadTime(note.content);
+  const hasVideo = Boolean(getYoutubeId(note.youtube_url));
+
+  row.innerHTML = `
+    <span class="tag ${tagClass}">${projectLabel}</span>
+    ${hasVideo ? '<span class="yt-indicator" title="Contém vídeo YouTube">▶</span>' : ''}
+    <div class="row-main">
+      <h3>${escapeHtml(note.title)}</h3>
+      <p>${escapeHtml(note.content ? note.content.slice(0, 140) : 'Sem descrição adicional.')}</p>
+    </div>
+    <div class="row-meta">
+      <span>${relativeTime}</span>
+      <span>${readTime}</span>
+      <button class="btn-delete" title="Eliminar nota" aria-label="Eliminar nota">✕</button>
+    </div>
+  `;
+
+  row.addEventListener('click', () => openViewModal(note));
+
+  row.querySelector('.btn-delete')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteNote(note.id);
+  });
+
+  return row;
 }
 
 // Carregar notas da API
@@ -288,32 +396,36 @@ async function loadNotes(searchQuery = '') {
     const response = await fetch(url);
     if (!response.ok) throw new Error('Falha ao comunicar com o servidor');
     allNotes = await response.json();
-    renderFilteredNotes(searchQuery);
+
+    if (currentActiveView === 'category') {
+      renderCategoryNotes(searchQuery);
+    } else {
+      renderDashboardRecentNotes(searchQuery);
+    }
+
     updateDynamicMetrics(allNotes);
   } catch (error) {
     console.error('Erro ao carregar notas:', error);
-    noteList.innerHTML = `
-      <div class="empty-notes">
-        <p>Não foi possível ligar à base de dados.</p>
-        <button onclick="loadNotes()">Tentar novamente</button>
-      </div>
-    `;
+    if (noteList) {
+      noteList.innerHTML = `
+        <div class="empty-notes">
+          <p>Não foi possível ligar à base de dados.</p>
+          <button onclick="loadNotes()">Tentar novamente</button>
+        </div>
+      `;
+    }
   }
 }
 
-function renderFilteredNotes(searchQuery = '') {
+// Renderizar notas recentes no Dashboard
+function renderDashboardRecentNotes(searchQuery = '') {
+  if (!noteList) return;
   noteList.innerHTML = '';
 
   let list = allNotes;
-  if (currentFilter !== 'all') {
-    list = list.filter(n => (n.project || '').toLowerCase() === currentFilter.toLowerCase());
-  }
-
   if (list.length === 0) {
     const msg = searchQuery
       ? `Nenhuma nota encontrada para “${escapeHtml(searchQuery)}”.`
-      : currentFilter !== 'all'
-      ? `Ainda não tens notas no projeto “${escapeHtml(currentFilter)}”.`
       : 'O teu rastro está limpo. Começa por criar uma nota ou importar um guia DIY!';
     
     noteList.innerHTML = `
@@ -322,13 +434,62 @@ function renderFilteredNotes(searchQuery = '') {
         <button id="empty-add-btn">Criar nota agora <span>＋</span></button>
       </div>
     `;
-    document.querySelector('#empty-add-btn')?.addEventListener('click', () => openModal(currentFilter !== 'all' ? currentFilter : 'Geral'));
+    document.querySelector('#empty-add-btn')?.addEventListener('click', () => openModal('Geral'));
     return;
   }
 
-  list.forEach((note, index) => {
+  // No dashboard mostra as 6 mais recentes
+  const recentList = list.slice(0, 6);
+  recentList.forEach((note, index) => {
     noteList.appendChild(createNoteElement(note, index === 0));
   });
+}
+
+// Renderizar todas as notas na Página Dedicada da Categoria (Grelha ou Lista)
+function renderCategoryNotes(searchQuery = '') {
+  if (!categoryNotesContainer) return;
+  categoryNotesContainer.innerHTML = '';
+
+  let list = allNotes;
+  if (currentFilter !== 'all') {
+    list = list.filter(n => (n.project || '').toLowerCase() === currentFilter.toLowerCase());
+  }
+
+  if (categoryPageSubtitle) {
+    categoryPageSubtitle.textContent = `${list.length} ${list.length === 1 ? 'nota guardada' : 'notas guardadas'}`;
+  }
+
+  if (list.length === 0) {
+    const msg = searchQuery
+      ? `Nenhuma nota encontrada para “${escapeHtml(searchQuery)}”.`
+      : currentFilter !== 'all'
+      ? `Ainda não tens notas no projeto “${escapeHtml(currentFilter)}”.`
+      : 'Ainda não existem notas criadas.';
+    
+    categoryNotesContainer.className = 'category-notes-grid';
+    categoryNotesContainer.innerHTML = `
+      <div class="empty-notes">
+        <p>${msg}</p>
+        <button id="empty-category-add-btn">Criar nota neste projeto <span>＋</span></button>
+      </div>
+    `;
+    document.querySelector('#empty-category-add-btn')?.addEventListener('click', () => {
+      openModal(currentFilter !== 'all' ? currentFilter : 'Geral');
+    });
+    return;
+  }
+
+  if (currentDisplayMode === 'grid') {
+    categoryNotesContainer.className = 'category-notes-grid';
+    list.forEach((note) => {
+      categoryNotesContainer.appendChild(createNoteElement(note, false));
+    });
+  } else {
+    categoryNotesContainer.className = 'category-notes-list';
+    list.forEach((note) => {
+      categoryNotesContainer.appendChild(createNoteListRow(note));
+    });
+  }
 }
 
 // Atualização de projetos dinâmicos e métricas
@@ -359,33 +520,37 @@ function updateDynamicMetrics(notes) {
   }).length;
   if (activitySessions) activitySessions.textContent = activeThisWeek;
 
+  // Renderizar projetos na barra lateral
   if (projectsList) {
     projectsList.innerHTML = '';
 
+    // Opção "Todos"
     const allLink = document.createElement('a');
     allLink.href = '#';
-    allLink.className = `project ${currentFilter === 'all' ? 'active' : ''}`;
+    allLink.className = `project ${currentActiveView === 'category' && currentFilter === 'all' ? 'active' : ''}`;
     allLink.dataset.filter = 'all';
     allLink.innerHTML = `<i class="dot coral"></i> Todos <span>${notes.length}</span>`;
     allLink.addEventListener('click', (e) => {
       e.preventDefault();
-      setProjectFilter('all');
+      showCategoryView('all');
     });
     projectsList.appendChild(allLink);
 
-    const dotColors = ['coral', 'blue', 'yellow'];
+    // Projetos da base de dados
+    const dotColors = ['coral', 'blue', 'yellow', 'green'];
     let colorIdx = 0;
     projectMap.forEach((count, projName) => {
       const pLink = document.createElement('a');
       pLink.href = '#';
-      pLink.className = `project ${currentFilter.toLowerCase() === projName.toLowerCase() ? 'active' : ''}`;
+      const isTarget = currentActiveView === 'category' && currentFilter.toLowerCase() === projName.toLowerCase();
+      pLink.className = `project ${isTarget ? 'active' : ''}`;
       pLink.dataset.filter = projName;
       const color = dotColors[colorIdx % dotColors.length];
       colorIdx++;
       pLink.innerHTML = `<i class="dot ${color}"></i> ${escapeHtml(projName)} <span>${count}</span>`;
       pLink.addEventListener('click', (e) => {
         e.preventDefault();
-        setProjectFilter(projName);
+        showCategoryView(projName);
       });
       projectsList.appendChild(pLink);
     });
@@ -404,19 +569,8 @@ function updateDynamicMetrics(notes) {
   }
 }
 
-function setProjectFilter(filter) {
-  currentFilter = filter;
-  document.querySelectorAll('.projects .project').forEach(p => {
-    p.classList.toggle('active', (p.dataset.filter || '').toLowerCase() === filter.toLowerCase());
-  });
-  if (breadcrumbCurrent) {
-    breadcrumbCurrent.textContent = filter === 'all' ? 'Visão geral' : filter;
-  }
-  renderFilteredNotes();
-}
-
 // Guardar nova nota
-document.querySelector('#save-note').addEventListener('click', async () => {
+document.querySelector('#save-note')?.addEventListener('click', async () => {
   const title = titleInput.value.trim();
   if (!title) {
     titleInput.focus();
@@ -450,15 +604,18 @@ document.querySelector('#save-note').addEventListener('click', async () => {
 });
 
 // Eliminar nota
-async function deleteNote(id, cardElement) {
+async function deleteNote(id) {
   if (!confirm('Eliminar esta nota do teu rastro?')) return;
   try {
     const response = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Não foi possível eliminar');
-    if (cardElement) cardElement.remove();
     allNotes = allNotes.filter(n => n.id !== id);
     updateDynamicMetrics(allNotes);
-    if (allNotes.length === 0) renderFilteredNotes();
+    if (currentActiveView === 'category') {
+      renderCategoryNotes();
+    } else {
+      renderDashboardRecentNotes();
+    }
     showToast('Nota eliminada ✓');
   } catch (error) {
     showToast(error.message || 'Erro ao eliminar nota');
@@ -471,37 +628,32 @@ function triggerSearch() {
   if (query === null) return;
   const clean = query.trim();
   if (!clean) {
-    sectionTitle.textContent = 'Notas recentes';
-    sectionSubtitle.textContent = 'As tuas anotações e tutoriais guardados.';
+    if (sectionTitle) sectionTitle.textContent = 'Notas recentes';
+    if (sectionSubtitle) sectionSubtitle.textContent = 'As tuas anotações e tutoriais guardados.';
     loadNotes();
     return;
   }
-  sectionTitle.textContent = `Resultados para “${clean}”`;
-  sectionSubtitle.textContent = 'A pesquisar em títulos e conteúdos na base de dados.';
+  if (sectionTitle) sectionTitle.textContent = `Resultados para “${clean}”`;
+  if (sectionSubtitle) sectionSubtitle.textContent = 'A pesquisar em títulos e conteúdos na base de dados.';
   loadNotes(clean);
 }
 
 document.querySelector('#search-button')?.addEventListener('click', triggerSearch);
 document.querySelector('#reset-filter')?.addEventListener('click', (e) => {
   e.preventDefault();
-  setProjectFilter('all');
-  sectionTitle.textContent = 'Notas recentes';
-  sectionSubtitle.textContent = 'As tuas anotações e tutoriais guardados.';
-  loadNotes();
+  showCategoryView('all');
 });
 document.querySelector('#nav-overview')?.addEventListener('click', (e) => {
   e.preventDefault();
-  setProjectFilter('all');
-  loadNotes();
+  showDashboardView();
 });
 document.querySelector('#nav-recent')?.addEventListener('click', (e) => {
   e.preventDefault();
-  setProjectFilter('all');
-  loadNotes();
+  showCategoryView('all');
 });
 
 // Importar GitHub com IA
-document.querySelector('#import-github').addEventListener('click', async () => {
+document.querySelector('#import-github')?.addEventListener('click', async () => {
   const url = githubInput.value.trim();
   if (!url) return githubInput.focus();
 
@@ -522,6 +674,7 @@ document.querySelector('#import-github').addEventListener('click', async () => {
     githubInput.value = '';
     showToast('Guia DIY criado com sucesso ✓');
     await loadNotes();
+    showCategoryView('DIY');
   } catch (error) {
     console.error('Erro na importação GitHub:', error);
     showToast(error.message || 'Erro ao importar repositório', true);

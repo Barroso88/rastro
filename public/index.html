@@ -42,91 +42,115 @@
           </div>
         </header>
 
-        <section class="hero">
-          <div>
-            <p class="eyebrow" id="today-eyebrow">BASE DE CONHECIMENTO</p>
-            <h1>Continua de onde<br><em>ficaste.</em></h1>
-            <p class="hero-copy">O teu conhecimento técnico, organizado e acessível a qualquer momento.</p>
-          </div>
-          <div class="hero-orbit">
-            <div class="orbit-ring ring-one"></div>
-            <div class="orbit-ring ring-two"></div>
-            <div class="orbit-star">✦</div>
-            <span class="orbit-chip chip-one">ideias</span>
-            <span class="orbit-chip chip-two">código</span>
-            <span class="orbit-chip chip-three">guias</span>
-          </div>
-        </section>
+        <!-- Vista Dashboard / Geral -->
+        <div id="dashboard-view">
+          <section class="hero">
+            <div>
+              <p class="eyebrow" id="today-eyebrow">BASE DE CONHECIMENTO</p>
+              <h1>Continua de onde<br><em>ficaste.</em></h1>
+              <p class="hero-copy">O teu conhecimento técnico, organizado e acessível a qualquer momento.</p>
+            </div>
+            <div class="hero-orbit">
+              <div class="orbit-ring ring-one"></div>
+              <div class="orbit-ring ring-two"></div>
+              <div class="orbit-star">✦</div>
+              <span class="orbit-chip chip-one">ideias</span>
+              <span class="orbit-chip chip-two">código</span>
+              <span class="orbit-chip chip-three">guias</span>
+            </div>
+          </section>
 
-        <section class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-icon coral-icon">↗</span>
-            <div><strong id="stat-total-notes">0</strong><span>notas guardadas</span></div>
-            <small>na base de dados</small>
-          </div>
-          <div class="stat-card">
-            <span class="stat-icon yellow-icon">◒</span>
-            <div><strong id="stat-total-projects">0</strong><span>projetos criados</span></div>
-            <small>organizados</small>
-          </div>
-          <div class="stat-card">
-            <span class="stat-icon blue-icon">⌁</span>
-            <div><strong id="stat-total-guides">0</strong><span>guias DIY</span></div>
-            <small>importados do GitHub</small>
-          </div>
-        </section>
+          <section class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-icon coral-icon">↗</span>
+              <div><strong id="stat-total-notes">0</strong><span>notas guardadas</span></div>
+              <small>na base de dados</small>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon yellow-icon">◒</span>
+              <div><strong id="stat-total-projects">0</strong><span>projetos criados</span></div>
+              <small>organizados</small>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon blue-icon">⌁</span>
+              <div><strong id="stat-total-guides">0</strong><span>guias DIY</span></div>
+              <small>importados do GitHub</small>
+            </div>
+          </section>
 
-        <section class="content-grid" id="diy">
-          <div class="section-block recent-block">
-            <div class="section-heading">
-              <div>
-                <h2 id="section-title">Notas recentes</h2>
-                <p id="section-subtitle">As tuas anotações e tutoriais guardados.</p>
+          <section class="content-grid" id="diy">
+            <div class="section-block recent-block">
+              <div class="section-heading">
+                <div>
+                  <h2 id="section-title">Notas recentes</h2>
+                  <p id="section-subtitle">As tuas anotações e tutoriais guardados.</p>
+                </div>
+                <a href="#" id="reset-filter">Ver todas <span>→</span></a>
               </div>
-              <a href="#" id="reset-filter">Ver todas <span>→</span></a>
+              <div class="note-list" id="note-list">
+                <!-- Carregado dinamicamente do PostgreSQL -->
+              </div>
             </div>
-            <div class="note-list" id="note-list">
-              <!-- Carregado dinamicamente do PostgreSQL -->
-            </div>
-          </div>
-          <aside class="right-column">
-            <div class="section-heading">
-              <div><h2>Atividade</h2><p>Atualizações recentes.</p></div>
-            </div>
-            <div class="activity-card">
-              <div class="activity-chart">
-                <div class="chart-labels"><span id="chart-max">4</span><span>2</span><span>0</span></div>
-                <div class="chart-area">
-                  <i class="grid-line line-a"></i>
-                  <i class="grid-line line-b"></i>
-                  <svg viewBox="0 0 300 120" preserveAspectRatio="none">
-                    <path id="activity-path" d="M0 100 C50 100, 100 90, 150 70 S250 40, 300 30" fill="none" stroke="#e86f51" stroke-width="3"/>
-                    <path id="activity-fill" d="M0 100 C50 100, 100 90, 150 70 S250 40, 300 30 V120 H0Z" fill="url(#fade)" opacity=".28"/>
-                    <defs>
-                      <linearGradient id="fade" x1="0" x2="0" y1="0" y2="1">
-                        <stop stop-color="#e86f51"/>
-                        <stop offset="1" stop-color="#e86f51" stop-opacity="0"/>
-                      </linearGradient>
-                    </defs>
-                  </svg>
+            <aside class="right-column">
+              <div class="section-heading">
+                <div><h2>Atividade</h2><p>Atualizações recentes.</p></div>
+              </div>
+              <div class="activity-card">
+                <div class="activity-chart">
+                  <div class="chart-labels"><span id="chart-max">4</span><span>2</span><span>0</span></div>
+                  <div class="chart-area">
+                    <i class="grid-line line-a"></i>
+                    <i class="grid-line line-b"></i>
+                    <svg viewBox="0 0 300 120" preserveAspectRatio="none">
+                      <path id="activity-path" d="M0 100 C50 100, 100 90, 150 70 S250 40, 300 30" fill="none" stroke="#e86f51" stroke-width="3"/>
+                      <path id="activity-fill" d="M0 100 C50 100, 100 90, 150 70 S250 40, 300 30 V120 H0Z" fill="url(#fade)" opacity=".28"/>
+                      <defs>
+                        <linearGradient id="fade" x1="0" x2="0" y1="0" y2="1">
+                          <stop stop-color="#e86f51"/>
+                          <stop offset="1" stop-color="#e86f51" stop-opacity="0"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                </div>
+                <div class="chart-days"><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span><span>dom</span></div>
+                <div class="activity-total">
+                  <strong id="activity-sessions">0</strong>
+                  <span>notas criadas ou atualizadas<br>nos últimos 7 dias</span>
                 </div>
               </div>
-              <div class="chart-days"><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span><span>dom</span></div>
-              <div class="activity-total">
-                <strong id="activity-sessions">0</strong>
-                <span>notas criadas ou atualizadas<br>nos últimos 7 dias</span>
+              <div class="prompt-card">
+                <span class="prompt-mark">✦</span>
+                <div>
+                  <strong>Anotar novidade?</strong>
+                  <p>Guarda comandos ou soluções antes de esqueceres.</p>
+                </div>
+                <button id="quick-note" aria-label="Criar nota rápida">＋</button>
+              </div>
+            </aside>
+          </section>
+        </div>
+
+        <!-- Nova Vista Dedicada de Categoria / Projeto -->
+        <div id="category-view" class="category-view" style="display: none;">
+          <div class="category-header">
+            <div class="category-info">
+              <h1 id="category-page-title">Projeto</h1>
+              <p id="category-page-subtitle">0 notas guardadas</p>
+            </div>
+            <div class="category-controls">
+              <button class="btn-category-add" id="category-add-btn"><span>＋</span> Nova nota</button>
+              <div class="view-switch">
+                <button class="view-btn active" id="view-grid-btn" title="Modo Grelha">▦ Grelha</button>
+                <button class="view-btn" id="view-list-btn" title="Modo Lista">☰ Lista</button>
               </div>
             </div>
-            <div class="prompt-card">
-              <span class="prompt-mark">✦</span>
-              <div>
-                <strong>Anotar novidade?</strong>
-                <p>Guarda comandos ou soluções antes de esqueceres.</p>
-              </div>
-              <button id="quick-note" aria-label="Criar nota rápida">＋</button>
-            </div>
-          </aside>
-        </section>
+          </div>
+          <div id="category-notes-container" class="category-notes-grid">
+            <!-- Notas do projeto renderizadas em Grelha ou Lista -->
+          </div>
+        </div>
+
       </main>
     </div>
 
