@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="rastroCoral" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f27d60"/>
+      <stop offset="100%" stop-color="#d65737"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Fundo Squircle Coral da Marca Rastro -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#rastroCoral)"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="15.5" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Símbolo Diagonal Rastro (↗) -->
+  <g fill="none" stroke="#ffffff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+    <line x1="21" y1="43" x2="43" y2="21"/>
+    <polyline points="28,21 43,21 43,36"/>
+  </g>
+</svg>
