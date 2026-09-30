@@ -24,7 +24,8 @@ document.querySelector('#save-note').addEventListener('click', () => {
       const card = document.createElement('article');
       card.className = 'note-card featured';
       card.dataset.title = note.title;
-      card.innerHTML = `<div class="note-top"><span class="tag coral-tag">${note.project.toUpperCase()}</span><button class="more">•••</button></div><h3>${escapeHtml(note.title)}</h3><p>${escapeHtml(note.content || 'Sem descrição adicional.')}</p>${note.youtube_url ? `<a class="youtube-link" href="${escapeHtml(note.youtube_url)}" target="_blank" rel="noopener">▶ Ver tutorial no YouTube</a>` : ''}<div class="note-footer"><span>Agora</span><span class="read-progress"><i></i></span><span>1 min</span></div>`;
+      const videoId = getYoutubeId(note.youtube_url);
+      card.innerHTML = `<div class="note-top"><span class="tag coral-tag">${note.project.toUpperCase()}</span><button class="more">•••</button></div>${videoId ? `<a class="youtube-thumb" href="${escapeHtml(note.youtube_url)}" target="_blank" rel="noopener"><img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="Thumbnail do vídeo" /><span>▶</span></a>` : ''}<h3>${escapeHtml(note.title)}</h3><p>${escapeHtml(note.content || 'Sem descrição adicional.')}</p>${note.youtube_url ? `<a class="youtube-link" href="${escapeHtml(note.youtube_url)}" target="_blank" rel="noopener">▶ Ver tutorial no YouTube</a>` : ''}<div class="note-footer"><span>Agora</span><span class="read-progress"><i></i></span><span>1 min</span></div>`;
       document.querySelector('.note-list').prepend(card);
       closeModal(); document.querySelector('.modal textarea').value = ''; document.querySelector('#youtube-url').value = ''; title.value = '';
       showToast('Nota guardada no teu rastro ✓');
@@ -49,4 +50,5 @@ document.querySelector('#import-github').addEventListener('click', () => {
     .catch(error => { button.disabled = false; button.innerHTML = 'Organizar guia <span>→</span>'; showToast(error.message || 'Não foi possível importar o repositório'); });
 });
 function escapeHtml(value) { return value.replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
+function getYoutubeId(url) { const match = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/); return match?.[1] || ''; }
 function showToast(message) { const toast = document.querySelector('.toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2800); }
