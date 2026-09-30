@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS notes (
   id BIGSERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   content TEXT NOT NULL DEFAULT '',
-  project TEXT NOT NULL DEFAULT 'Loja online',
+  project TEXT NOT NULL DEFAULT 'Geral',
   youtube_url TEXT,
   tags TEXT[] NOT NULL DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
