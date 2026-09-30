@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>rastro</Name>
+  <Repository>ghcr.io/barroso88/rastro:latest</Repository>
+  <Registry>https://github.com/Barroso88/rastro/pkgs/container/rastro</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/Barroso88/rastro</Support>
+  <Project>https://github.com/Barroso88/rastro</Project>
+  <Overview>Rastro — Base de conhecimento pessoal, anotações de projetos e importador de guias técnicos com IA.</Overview>
+  <Category>Productivity: Tools: Utilities:</Category>
+  <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/Barroso88/rastro/main/unraid-template.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Barroso88/rastro/main/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <Config Name="WebUI Port" Target="3000" Default="3000" Mode="tcp" Description="Porta do contentor mapeada para o host Unraid" Type="Port" Display="always" Required="true" Mask="false">3058</Config>
+  <Config Name="DATABASE_URL" Target="DATABASE_URL" Default="" Mode="" Description="String de conexão PostgreSQL (ex: postgresql://utilizador:senha@192.168.1.152:5432/rastro)" Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="AI_API_KEY" Target="AI_API_KEY" Default="" Mode="" Description="Chave de API do Google AI Studio (Gemini)" Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="AI_MODEL" Target="AI_MODEL" Default="gemini-2.5-flash" Mode="" Description="Modelo de IA Gemini" Type="Variable" Display="always" Required="false" Mask="false">gemini-2.5-flash</Config>
+</Container>
