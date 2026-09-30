@@ -6,6 +6,7 @@
   --paper: #f8f8f6;
   --card: #ffffff;
   --coral: #e86f51;
+  --coral-hover: #d85c3e;
   --coral-dark: #c4472a;
   --blue: #2c6e9f;
   --yellow: #9c7314;
@@ -70,36 +71,44 @@ body.dark ::placeholder {
   font-size: 19px;
 }
 
+/* Botão Nova Nota na Barra Lateral (Coral com texto branco em ambos os temas) */
 .new-note {
   height: 42px;
   border: 0;
   border-radius: 10px;
-  background: var(--ink);
-  color: #fff;
-  font: 600 14px 'DM Sans', sans-serif;
+  background: var(--coral);
+  color: #ffffff;
+  font: 600 13px 'DM Sans', sans-serif;
   text-align: left;
   padding: 0 12px;
   margin-bottom: 27px;
   cursor: pointer;
-  transition: transform .15s, opacity .15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(232, 111, 81, 0.28);
+  transition: transform .15s, background .15s, box-shadow .15s;
 }
 
 .new-note:hover {
-  opacity: 0.93;
+  background: var(--coral-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232, 111, 81, 0.38);
 }
 
 .new-note span {
-  font-size: 21px;
-  margin-right: 8px;
-  vertical-align: -2px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
 }
 
 .new-note kbd {
-  float: right;
+  margin-left: auto;
   font: 11px 'DM Sans', sans-serif;
-  font-weight: 600;
-  color: #bbb;
-  background: #35363b;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.24);
   padding: 4px 6px;
   border-radius: 5px;
 }
@@ -692,6 +701,11 @@ body.dark ::placeholder {
   padding: 9px 18px;
   font: 600 13px 'DM Sans', sans-serif;
   cursor: pointer;
+  transition: background .15s;
+}
+
+.empty-notes button:hover {
+  background: var(--coral-hover);
 }
 
 /* Coluna Direita (Atividade) */
@@ -811,6 +825,14 @@ body.dark ::placeholder {
   height: 28px;
   font-size: 19px;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform .15s, background .15s;
+}
+
+.prompt-card button:hover {
+  background: var(--coral-hover);
+  transform: scale(1.05);
 }
 
 /* Vista Dedicada de Categoria / Projeto */
@@ -871,32 +893,43 @@ body.dark ::placeholder {
   font-family: 'DM Sans', sans-serif;
 }
 
+.view-btn:hover {
+  color: var(--ink);
+}
+
 .view-btn.active {
   background: #ffffff;
   color: var(--ink);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
 }
 
+/* Botão Nova Nota na Categoria (Coral com texto branco em ambos os temas) */
 .btn-category-add {
   border: 0;
-  background: var(--ink);
-  color: #fff;
+  background: var(--coral);
+  color: #ffffff;
   border-radius: 8px;
-  padding: 9px 15px;
+  padding: 8px 14px;
   font: 600 13px 'DM Sans', sans-serif;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: opacity .15s;
+  box-shadow: 0 2px 6px rgba(232, 111, 81, 0.25);
+  transition: transform .15s, background .15s, box-shadow .15s;
 }
 
 .btn-category-add:hover {
-  opacity: 0.92;
+  background: var(--coral-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(232, 111, 81, 0.35);
 }
 
 .btn-category-add span {
-  color: var(--coral);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /* Modo Grelha de Categoria */
@@ -1097,7 +1130,7 @@ body.dark ::placeholder {
   padding: 10px 16px;
   font: 600 12px 'DM Sans', sans-serif;
   cursor: pointer;
-  transition: opacity .15s;
+  transition: opacity .15s, background .15s;
 }
 
 .cancel {
@@ -1110,13 +1143,18 @@ body.dark ::placeholder {
 }
 
 .save {
-  background: var(--ink);
-  color: #fff;
+  background: var(--coral);
+  color: #ffffff;
+}
+
+.save:hover {
+  background: var(--coral-hover);
 }
 
 .save span {
-  color: var(--coral);
-  margin-left: 8px;
+  color: #ffffff;
+  margin-left: 6px;
+  font-weight: 700;
 }
 
 .copy-btn {
@@ -1227,12 +1265,13 @@ body.dark ::placeholder {
   text-decoration: underline;
 }
 
+/* Toast */
 .toast {
   position: fixed;
   bottom: 25px;
   right: 25px;
-  background: var(--ink);
-  color: #fff;
+  background: #1c1d22;
+  color: #ffffff;
   padding: 12px 18px;
   border-radius: 9px;
   font-size: 13px;
@@ -1325,6 +1364,26 @@ body.dark .brand {
   color: #f4f3f0;
 }
 
+/* Botão Nova Nota no Dark Mode */
+body.dark .new-note {
+  background: var(--coral);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(232, 111, 81, 0.35);
+}
+
+body.dark .new-note:hover {
+  background: #f07b5e;
+}
+
+body.dark .new-note span {
+  color: #ffffff;
+}
+
+body.dark .new-note kbd {
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+}
+
 body.dark .nav-item {
   color: #b5b6bc;
 }
@@ -1371,20 +1430,24 @@ body.dark .profile small {
 body.dark .search-button,
 body.dark .icon-button {
   background: #222328;
-  border-color: var(--line);
-  color: #b5b6bc;
+  border-color: #3b3c44;
+  color: #d8d9de;
 }
 
 body.dark .search-button:hover,
 body.dark .icon-button:hover {
-  border-color: #4f5059;
-  color: #fff;
+  border-color: #555762;
+  color: #ffffff;
+}
+
+body.dark .search-button span {
+  color: #d8d9de;
 }
 
 body.dark .search-button kbd {
-  background: #31333a;
-  color: #c5c6cc;
-  border-color: #41434c;
+  background: #2f3037;
+  color: #d8d9de;
+  border-color: #444650;
 }
 
 body.dark .hero-copy {
@@ -1451,10 +1514,30 @@ body.dark .note-card.featured {
   border: 1px solid var(--coral);
 }
 
-body.dark .coral-tag { background: #44241e; color: #ffa28b; }
-body.dark .blue-tag { background: #1c3245; color: #92c5ee; }
-body.dark .yellow-tag { background: #423617; color: #eed47d; }
-body.dark .green-tag { background: #183e29; color: #85e2a8; }
+/* Badges com alto contraste no tema escuro */
+body.dark .coral-tag {
+  background: rgba(232, 111, 81, 0.18);
+  color: #ff9b82;
+  border: 1px solid rgba(232, 111, 81, 0.35);
+}
+
+body.dark .blue-tag {
+  background: rgba(70, 122, 164, 0.22);
+  color: #8ec3ed;
+  border: 1px solid rgba(70, 122, 164, 0.35);
+}
+
+body.dark .yellow-tag {
+  background: rgba(221, 184, 78, 0.22);
+  color: #f2d479;
+  border: 1px solid rgba(221, 184, 78, 0.35);
+}
+
+body.dark .green-tag {
+  background: rgba(38, 114, 69, 0.25);
+  color: #7de2a5;
+  border: 1px solid rgba(38, 114, 69, 0.35);
+}
 
 body.dark .btn-delete {
   color: #909299;
@@ -1502,8 +1585,26 @@ body.dark .view-btn {
   color: #a9aaaf;
 }
 
+body.dark .view-btn:hover {
+  color: #ffffff;
+}
+
 body.dark .view-btn.active {
   background: #1e1f24;
+  color: #ffffff;
+}
+
+/* Botão Nova Nota na Categoria no Dark Mode */
+body.dark .btn-category-add {
+  background: var(--coral);
+  color: #ffffff;
+}
+
+body.dark .btn-category-add:hover {
+  background: #ef785c;
+}
+
+body.dark .btn-category-add span {
   color: #ffffff;
 }
 
@@ -1557,18 +1658,39 @@ body.dark .cancel:hover {
   background: #3e3f46;
 }
 
+body.dark .save {
+  background: var(--coral);
+  color: #ffffff;
+}
+
+body.dark .save:hover {
+  background: #ef785c;
+}
+
+body.dark .save span {
+  color: #ffffff;
+}
+
 body.dark .copy-btn {
-  background: #203548;
+  background: #1e3347;
   color: #8fc7f3;
+  border: 1px solid #2e4c68;
 }
 
 body.dark .btn-delete-view {
   background: #41231f;
-  color: #ff9d85;
+  color: #ff9b82;
+  border: 1px solid #582b26;
 }
 
 body.dark .view-date {
   color: #92939a;
+}
+
+body.dark .toast {
+  background: #2b2d35;
+  border: 1px solid #414450;
+  color: #ffffff;
 }
 
 body.dark .markdown-body p,
