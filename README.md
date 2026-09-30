@@ -23,6 +23,16 @@ docker compose up -d --build
 
 Depois abre `http://IP_DO_UNRAID:3000`.
 
+### Unraid / GHCR
+
+A imagem publicada é:
+
+```text
+ghcr.io/barroso88/rastro:latest
+```
+
+No Unraid, usa essa imagem no Docker template. Se o pacote GHCR estiver privado, autentica o Docker Registry com um GitHub Personal Access Token que tenha permissão `read:packages`.
+
 ## Configuração da IA
 
 O Rastro aceita APIs compatíveis com OpenAI:

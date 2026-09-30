@@ -1,6 +1,6 @@
 services:
   rastro:
-    build: .
+    image: ghcr.io/barroso88/rastro:latest
     container_name: rastro-app
     restart: unless-stopped
     ports:
