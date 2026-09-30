@@ -11,6 +11,9 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgres:
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(__dirname));
 
+// Mantém bases já existentes compatíveis com a funcionalidade de vídeos.
+pool.query('ALTER TABLE notes ADD COLUMN IF NOT EXISTS youtube_url TEXT').catch(error => console.error('Migração:', error.message));
+
 app.get('/api/health', async (_req, res) => {
   try { await pool.query('SELECT 1'); res.json({ ok: true }); }
   catch { res.status(503).json({ ok: false }); }
@@ -25,11 +28,11 @@ app.get('/api/notes', async (req, res) => {
 });
 
 app.post('/api/notes', async (req, res) => {
-  const { title, content = '', project = 'Loja online', tags = [] } = req.body || {};
+  const { title, content = '', project = 'Loja online', tags = [], youtube_url = null } = req.body || {};
   if (!title?.trim()) return res.status(400).json({ error: 'O título é obrigatório.' });
   const result = await pool.query(
-    'INSERT INTO notes (title, content, project, tags) VALUES ($1, $2, $3, $4) RETURNING *',
-    [title.trim(), content, project, Array.isArray(tags) ? tags : []]
+    'INSERT INTO notes (title, content, project, tags, youtube_url) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [title.trim(), content, project, Array.isArray(tags) ? tags : [], youtube_url]
   );
   res.status(201).json(result.rows[0]);
 });

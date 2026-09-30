@@ -17,15 +17,16 @@ document.querySelector('#save-note').addEventListener('click', () => {
   const value = title.value.trim();
   if (!value) { title.focus(); return; }
   const content = document.querySelector('.modal textarea').value.trim();
-  fetch('/api/notes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ title: value, content }) })
+  const youtube_url = document.querySelector('#youtube-url').value.trim() || null;
+  fetch('/api/notes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ title: value, content, youtube_url }) })
     .then(response => { if (!response.ok) throw new Error('Não foi possível guardar'); return response.json(); })
     .then(note => {
       const card = document.createElement('article');
       card.className = 'note-card featured';
       card.dataset.title = note.title;
-      card.innerHTML = `<div class="note-top"><span class="tag coral-tag">${note.project.toUpperCase()}</span><button class="more">•••</button></div><h3>${escapeHtml(note.title)}</h3><p>${escapeHtml(note.content || 'Sem descrição adicional.')}</p><div class="note-footer"><span>Agora</span><span class="read-progress"><i></i></span><span>1 min</span></div>`;
+      card.innerHTML = `<div class="note-top"><span class="tag coral-tag">${note.project.toUpperCase()}</span><button class="more">•••</button></div><h3>${escapeHtml(note.title)}</h3><p>${escapeHtml(note.content || 'Sem descrição adicional.')}</p>${note.youtube_url ? `<a class="youtube-link" href="${escapeHtml(note.youtube_url)}" target="_blank" rel="noopener">▶ Ver tutorial no YouTube</a>` : ''}<div class="note-footer"><span>Agora</span><span class="read-progress"><i></i></span><span>1 min</span></div>`;
       document.querySelector('.note-list').prepend(card);
-      closeModal(); document.querySelector('.modal textarea').value = ''; title.value = '';
+      closeModal(); document.querySelector('.modal textarea').value = ''; document.querySelector('#youtube-url').value = ''; title.value = '';
       showToast('Nota guardada no teu rastro ✓');
     }).catch(() => showToast('Não foi possível guardar a nota'));
 });
