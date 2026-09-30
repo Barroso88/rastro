@@ -210,49 +210,70 @@ A primeira linha da tua resposta DEVE ser o título do guia começando por "# ".
   let rawText = '';
 
   if (isGoogle) {
-    // API Nativa do Google Gemini (sem passar por adaptadores)
-    let model = String(process.env.AI_MODEL || '').trim();
-    if (!model || model.startsWith('grok') || model.startsWith('gpt')) {
-      model = 'gemini-1.5-flash';
+    let preferredModel = String(process.env.AI_MODEL || '').trim();
+    if (!preferredModel || preferredModel.startsWith('grok') || preferredModel.startsWith('gpt')) {
+      preferredModel = 'gemini-2.5-flash';
     }
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    console.log(`[Rastro AI] A enviar ${owner}/${repo} para Google Gemini Nativo (${model})...`);
 
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemPrompt }]
+    const modelsToTry = [
+      preferredModel,
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-exp'
+    ].filter((m, i, arr) => m && arr.indexOf(m) === i);
+
+    let lastError = null;
+
+    for (const m of modelsToTry) {
+      console.log(`[Rastro AI] A tentar Google Gemini modelo: ${m}...`);
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
         },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: userContent }]
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userContent }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.2
           }
-        ],
-        generationConfig: {
-          temperature: 0.2
-        }
-      })
-    });
+        })
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error(`[Rastro AI] Erro HTTP ${response.status} do Google Gemini:`, errorBody);
-      let errorDetail = `Erro HTTP ${response.status}`;
-      try {
-        const parsedErr = JSON.parse(errorBody);
-        errorDetail = parsedErr.error?.message || parsedErr.message || errorDetail;
-      } catch {}
-      throw new Error(`Google Gemini devolveu erro (${response.status}): ${errorDetail}`);
+      if (response.ok) {
+        const data = await response.json();
+        rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (rawText) break;
+      } else {
+        const errorBody = await response.text();
+        console.warn(`[Rastro AI] Modelo ${m} falhou com HTTP ${response.status}:`, errorBody);
+        let errorDetail = `Erro HTTP ${response.status}`;
+        try {
+          const parsedErr = JSON.parse(errorBody);
+          errorDetail = parsedErr.error?.message || parsedErr.message || errorDetail;
+        } catch {}
+
+        if (response.status === 404) {
+          lastError = new Error(`Google Gemini (${response.status}): ${errorDetail}`);
+          continue; // Tenta o modelo seguinte automaticamente
+        }
+        throw new Error(`Google Gemini (${response.status}): ${errorDetail}`);
+      }
     }
 
-    const data = await response.json();
-    rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!rawText && lastError) {
+      throw lastError;
+    }
   } else {
     // API Compatível OpenAI (xAI Grok, Groq, Ollama, OpenAI)
     const { endpoint, model } = getAiEndpointAndModel();
