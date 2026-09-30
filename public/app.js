@@ -523,7 +523,8 @@ document.querySelector('#import-github').addEventListener('click', async () => {
     showToast('Guia DIY criado com sucesso ✓');
     await loadNotes();
   } catch (error) {
-    showToast(error.message || 'Erro ao importar repositório');
+    console.error('Erro na importação GitHub:', error);
+    showToast(error.message || 'Erro ao importar repositório', true);
   } finally {
     button.disabled = false;
     button.innerHTML = 'Organizar guia com IA <span>→</span>';
@@ -558,12 +559,13 @@ function getYoutubeId(url) {
   return match?.[1] || '';
 }
 
-function showToast(message) {
+function showToast(message, isError = false) {
   const toast = document.querySelector('#toast');
   if (!toast) return;
   toast.textContent = message;
+  toast.style.background = isError ? '#9e2a2b' : 'var(--ink)';
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+  setTimeout(() => toast.classList.remove('show'), isError ? 6000 : 3200);
 }
 
 // Inicialização

@@ -103,55 +103,103 @@ app.post('/api/import/github', async (req, res) => {
     res.status(201).json(saved.rows[0]);
   } catch (error) {
     console.error('Erro ao importar repositório do GitHub:', error.message);
-    res.status(500).json({ error: 'Falha ao processar e guardar o guia do GitHub.' });
+    res.status(500).json({ error: error.message || 'Falha ao processar o guia com IA.' });
   }
 });
 
 async function organizeGuide({ owner, repo, readme }) {
   const apiKey = process.env.AI_API_KEY;
-  if (apiKey) {
-    try {
-      const baseUrl = (process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: process.env.AI_MODEL || 'gpt-4o-mini',
-          temperature: 0.2,
-          messages: [
-            {
-              role: 'system',
-              content: 'És um editor técnico de Portugal. Reorganiza documentação em português de Portugal, preservando comandos e nomes técnicos. Cria um guia claro com Objetivo, Requisitos, Instalação, Configuração, Execução e Problemas comuns. Responde estritamente em formato JSON com as chaves title e content.'
-            },
-            {
-              role: 'user',
-              content: `Repositório: ${owner}/${repo}\n\nREADME:\n${readme.slice(0, 50000)}`
-            }
-          ]
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const rawContent = data.choices?.[0]?.message?.content || '';
-        // Trata respostas envolvidas em blocos markdown ```json ... ```
-        const jsonMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        const parsed = JSON.parse(jsonMatch ? jsonMatch[1].trim() : rawContent.trim());
-        if (parsed.title && parsed.content) {
-          return parsed;
-        }
-      }
-    } catch (err) {
-      console.warn('Aviso: Organização por IA falhou, a usar formato original:', err.message);
-    }
+  if (!apiKey) {
+    throw new Error('A variável AI_API_KEY não está configurada no servidor Docker.');
   }
-  return {
-    title: `Guia DIY — ${repo}`,
-    content: `# ${repo}\n\n## Fonte\nhttps://github.com/${owner}/${repo}\n\n## Instruções originais\n\n${readme}`
-  };
+
+  const baseUrl = (process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
+  const model = process.env.AI_MODEL || 'grok-2-latest';
+
+  console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${baseUrl} (modelo: ${model})...`);
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'system',
+          content: `És um editor técnico de Portugal especialista em documentação de software e projetos de computação/eletrónica.
+O teu trabalho é reescrever integralmente a documentação em Português de Portugal (PT-PT), com rigor e clareza.
+Mantém comandos de terminal, nomes de pacotes, código e caminhos de ficheiros intactos.
+
+Estrutura o teu texto OBRIGATORIAMENTE assim em Markdown:
+# [Título claro e elucidativo do guia]
+## Objetivo
+Explica em poucas palavras o que este projeto faz e qual o seu benefício.
+
+## Requisitos
+Lista de pré-requisitos de sistema, dependências ou hardware.
+
+## Instalação
+Passo a passo com os comandos exatos de instalação.
+
+## Configuração
+Ficheiros de ambiente, portas e variáveis necessárias.
+
+## Execução
+Como iniciar o projeto e comandos úteis.
+
+## Problemas Comuns
+Dicas e soluções para os erros mais frequentes.
+
+A primeira linha da tua resposta DEVE ser o título do guia começando por "# ". Não uses blocos de código a envolver todo o texto.`
+        },
+        {
+          role: 'user',
+          content: `Repositório: ${owner}/${repo}\n\nDocumentação README original:\n${readme.slice(0, 45000)}`
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(`[Rastro AI] Erro HTTP ${response.status} da API:`, errorBody);
+    let errorDetail = `Erro HTTP ${response.status}`;
+    try {
+      const parsedErr = JSON.parse(errorBody);
+      errorDetail = parsedErr.error?.message || parsedErr.message || errorDetail;
+    } catch {}
+    throw new Error(`A API de IA devolveu erro (${response.status}): ${errorDetail}`);
+  }
+
+  const data = await response.json();
+  const rawText = data.choices?.[0]?.message?.content || '';
+
+  if (!rawText.trim()) {
+    throw new Error('A API de IA não devolveu conteúdo.');
+  }
+
+  // Se o modelo responder em JSON, tenta descodificar
+  try {
+    const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[1].trim() : rawText.trim());
+    if (parsed.title && parsed.content) {
+      return { title: parsed.title, content: parsed.content };
+    }
+  } catch {}
+
+  // Extração inteligente de título a partir de Markdown
+  const lines = rawText.trim().split('\n');
+  let title = `Guia DIY — ${repo}`;
+  const headerIdx = lines.findIndex(l => l.trim().startsWith('# '));
+  if (headerIdx !== -1) {
+    title = lines[headerIdx].replace(/^#\s+/, '').trim();
+  }
+
+  return { title, content: rawText.trim() };
 }
 
 app.delete('/api/notes/:id', async (req, res) => {
