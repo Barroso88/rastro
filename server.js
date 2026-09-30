@@ -163,7 +163,11 @@ async function organizeGuide({ owner, repo, readme }) {
   }
 
   const rawUrl = String(process.env.AI_BASE_URL || '').trim();
-  const isGoogle = apiKey.startsWith('AIzaSy') || rawUrl.includes('googleapis') || rawUrl.includes('gemini');
+  const isGoogle = apiKey.startsWith('AQ') ||
+                   apiKey.startsWith('AIza') ||
+                   rawUrl.includes('googleapis') ||
+                   rawUrl.includes('gemini') ||
+                   (!apiKey.startsWith('sk-') && !apiKey.startsWith('xai-') && !apiKey.startsWith('gsk_') && !rawUrl);
 
   const systemPrompt = `És um editor técnico sénior de Portugal, especialista em documentação de software, DevOps, hardware e projetos DIY/domótica.
 O teu objetivo é transformar a documentação fornecida num guia técnico prático e de referência em Português de Portugal (PT-PT).
@@ -206,7 +210,7 @@ A primeira linha da tua resposta DEVE ser o título do guia começando por "# ".
   let rawText = '';
 
   if (isGoogle) {
-    // API Nativa do Google Gemini (sem depender de adaptador /openai/)
+    // API Nativa do Google Gemini (sem passar por adaptadores)
     let model = String(process.env.AI_MODEL || '').trim();
     if (!model || model.startsWith('grok') || model.startsWith('gpt')) {
       model = 'gemini-1.5-flash';
@@ -216,7 +220,10 @@ A primeira linha da tua resposta DEVE ser o título do guia começando por "# ".
 
     const response = await fetch(geminiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
       body: JSON.stringify({
         system_instruction: {
           parts: [{ text: systemPrompt }]
