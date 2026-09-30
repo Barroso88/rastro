@@ -3,8 +3,19 @@ const titleInput = document.querySelector('#note-title');
 const contentInput = document.querySelector('#note-content');
 const projectInput = document.querySelector('#note-project');
 const youtubeInput = document.querySelector('#youtube-url');
+
 const githubModal = document.querySelector('#github-modal');
 const githubInput = document.querySelector('#github-url');
+
+const viewModal = document.querySelector('#view-modal');
+const viewTitle = document.querySelector('#view-title');
+const viewTag = document.querySelector('#view-tag');
+const viewDate = document.querySelector('#view-date');
+const viewContent = document.querySelector('#view-content');
+const viewVideo = document.querySelector('#view-video');
+const viewCopyBtn = document.querySelector('#view-copy-btn');
+const viewDeleteBtn = document.querySelector('#view-delete-btn');
+
 const noteList = document.querySelector('#note-list');
 const statTotalNotes = document.querySelector('#stat-total-notes');
 const statTotalProjects = document.querySelector('#stat-total-projects');
@@ -19,6 +30,7 @@ const projectSuggestions = document.querySelector('#project-suggestions');
 
 let allNotes = [];
 let currentFilter = 'all';
+let currentViewingNote = null;
 
 // Formatação da data atual no cabeçalho
 const todayEyebrow = document.querySelector('#today-eyebrow');
@@ -35,9 +47,16 @@ const openModal = (defaultProject = '') => {
   titleInput.focus();
 };
 const closeModal = () => modal.classList.remove('open');
+
 const openGithubModal = () => { githubModal.classList.add('open'); githubInput.focus(); };
 const closeGithubModal = () => githubModal.classList.remove('open');
 
+const closeViewModal = () => {
+  viewModal.classList.remove('open');
+  currentViewingNote = null;
+};
+
+// Eventos de fecho
 document.querySelector('#new-note')?.addEventListener('click', () => openModal(currentFilter !== 'all' ? currentFilter : 'Geral'));
 document.querySelector('#quick-note')?.addEventListener('click', () => openModal());
 document.querySelector('#add-project-btn')?.addEventListener('click', () => {
@@ -49,6 +68,7 @@ document.querySelector('#diy-link')?.addEventListener('click', (event) => {
   event.preventDefault();
   openGithubModal();
 });
+
 document.querySelector('#close-modal')?.addEventListener('click', closeModal);
 document.querySelector('#cancel-modal')?.addEventListener('click', closeModal);
 modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
@@ -56,6 +76,10 @@ modal.addEventListener('click', (event) => { if (event.target === modal) closeMo
 document.querySelector('#close-github')?.addEventListener('click', closeGithubModal);
 document.querySelector('#cancel-github')?.addEventListener('click', closeGithubModal);
 githubModal.addEventListener('click', (event) => { if (event.target === githubModal) closeGithubModal(); });
+
+document.querySelector('#close-view')?.addEventListener('click', closeViewModal);
+document.querySelector('#close-view-btn')?.addEventListener('click', closeViewModal);
+viewModal.addEventListener('click', (event) => { if (event.target === viewModal) closeViewModal(); });
 
 // Atalhos de teclado
 document.addEventListener('keydown', (event) => {
@@ -69,6 +93,7 @@ document.addEventListener('keydown', (event) => {
   } else if (event.key === 'Escape') {
     closeModal();
     closeGithubModal();
+    closeViewModal();
   }
 });
 
@@ -104,6 +129,105 @@ function calculateReadTime(text) {
   return `${minutes} min`;
 }
 
+// Renderizador simples e seguro de Markdown
+function renderMarkdown(text) {
+  if (!text) return '<p><em>Sem conteúdo adicional.</em></p>';
+
+  let escaped = escapeHtml(text);
+
+  // Blocos de código ```lang ... ```
+  escaped = escaped.replace(/```(?:[a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, (_match, code) => {
+    return `<pre><code>${code.trim()}</code></pre>`;
+  });
+
+  // Código inline `code`
+  escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Cabeçalhos
+  escaped = escaped.replace(/^### (.*$)/gim, '<h4>$1</h4>');
+  escaped = escaped.replace(/^## (.*$)/gim, '<h3>$1</h3>');
+  escaped = escaped.replace(/^# (.*$)/gim, '<h2>$1</h2>');
+
+  // Negrito e Itálico
+  escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // Links [texto](url)
+  escaped = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // Listas
+  escaped = escaped.replace(/^\s*[-*]\s+(.*)$/gim, '<li>$1</li>');
+  escaped = escaped.replace(/(<li>.*<\/li>)/gims, '<ul>$1</ul>');
+  escaped = escaped.replace(/<\/ul>\s*<ul>/g, '');
+
+  // Parágrafos
+  const paragraphs = escaped.split(/\n{2,}/).map(p => {
+    const trimmed = p.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('<h') || trimmed.startsWith('<pre') || trimmed.startsWith('<ul')) {
+      return trimmed;
+    }
+    return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
+  }).filter(Boolean);
+
+  return paragraphs.join('\n');
+}
+
+// Abrir modal de leitura completa
+function openViewModal(note) {
+  currentViewingNote = note;
+  viewTitle.textContent = note.title;
+
+  const tagClass = getTagColorClass(note.project);
+  viewTag.className = `tag ${tagClass}`;
+  viewTag.textContent = (note.project || 'Geral').toUpperCase();
+
+  const formattedDate = new Date(note.updated_at || note.created_at).toLocaleString('pt-PT', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  viewDate.textContent = formattedDate;
+
+  // Vídeo YouTube
+  const videoId = getYoutubeId(note.youtube_url);
+  if (videoId) {
+    viewVideo.innerHTML = `
+      <a class="youtube-thumb" href="${escapeHtml(note.youtube_url)}" target="_blank" rel="noopener">
+        <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="Miniatura do vídeo" />
+        <span>▶</span>
+      </a>
+      <a class="youtube-link" href="${escapeHtml(note.youtube_url)}" target="_blank" rel="noopener">▶ Abrir vídeo no YouTube</a>
+    `;
+  } else {
+    viewVideo.innerHTML = '';
+  }
+
+  // Conteúdo formatado
+  viewContent.innerHTML = renderMarkdown(note.content);
+  viewModal.classList.add('open');
+}
+
+// Copiar conteúdo da nota
+viewCopyBtn?.addEventListener('click', () => {
+  if (!currentViewingNote) return;
+  navigator.clipboard.writeText(currentViewingNote.content || '')
+    .then(() => showToast('Texto copiado para a área de transferência ✓'))
+    .catch(() => showToast('Não foi possível copiar'));
+});
+
+// Eliminar a partir do modal de leitura
+viewDeleteBtn?.addEventListener('click', () => {
+  if (!currentViewingNote) return;
+  const noteId = currentViewingNote.id;
+  const card = document.querySelector(`.note-card[data-id="${noteId}"]`);
+  deleteNote(noteId, card);
+  closeViewModal();
+});
+
+// Criar elemento de cartão para a lista
 function createNoteElement(note, isFirst = false) {
   const card = document.createElement('article');
   card.className = `note-card ${isFirst ? 'featured' : ''}`;
@@ -142,9 +266,16 @@ function createNoteElement(note, isFirst = false) {
     </div>
   `;
 
+  // Clique no cartão para abrir a leitura completa
+  card.addEventListener('click', () => openViewModal(note));
+
+  // Impedir propagação no botão de eliminar e links externos
   card.querySelector('.btn-delete')?.addEventListener('click', (e) => {
     e.stopPropagation();
     deleteNote(note.id, card);
+  });
+  card.querySelectorAll('.youtube-thumb, .youtube-link').forEach(link => {
+    link.addEventListener('click', (e) => e.stopPropagation());
   });
 
   return card;
@@ -200,30 +331,26 @@ function renderFilteredNotes(searchQuery = '') {
   });
 }
 
-// Atualização de projetos dinâmicos e estatísticas reais
+// Atualização de projetos dinâmicos e métricas
 function updateDynamicMetrics(notes) {
-  // Contadores globais
   if (statTotalNotes) statTotalNotes.textContent = notes.length;
   if (recentCount) recentCount.textContent = notes.length;
 
   const guides = notes.filter(n => (n.project || '').toLowerCase() === 'diy' || (n.tags || []).includes('diy'));
   if (statTotalGuides) statTotalGuides.textContent = guides.length;
 
-  // Projetos únicos existentes na base de dados
   const projectMap = new Map();
   notes.forEach(n => {
     const p = (n.project || 'Geral').trim();
     projectMap.set(p, (projectMap.get(p) || 0) + 1);
   });
 
-  // Se a lista estiver vazia, garante pelo menos Geral
   if (projectMap.size === 0) {
     projectMap.set('Geral', 0);
   }
 
   if (statTotalProjects) statTotalProjects.textContent = projectMap.size;
 
-  // Atividade nos últimos 7 dias
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const activeThisWeek = notes.filter(n => {
@@ -232,11 +359,9 @@ function updateDynamicMetrics(notes) {
   }).length;
   if (activitySessions) activitySessions.textContent = activeThisWeek;
 
-  // Renderizar projetos na barra lateral
   if (projectsList) {
     projectsList.innerHTML = '';
 
-    // Opção "Todos"
     const allLink = document.createElement('a');
     allLink.href = '#';
     allLink.className = `project ${currentFilter === 'all' ? 'active' : ''}`;
@@ -248,7 +373,6 @@ function updateDynamicMetrics(notes) {
     });
     projectsList.appendChild(allLink);
 
-    // Cada projeto único real
     const dotColors = ['coral', 'blue', 'yellow'];
     let colorIdx = 0;
     projectMap.forEach((count, projName) => {
@@ -267,7 +391,6 @@ function updateDynamicMetrics(notes) {
     });
   }
 
-  // Atualizar sugestões no datalist
   if (projectSuggestions) {
     projectSuggestions.innerHTML = '';
     const uniqueProjects = Array.from(projectMap.keys());
@@ -332,7 +455,7 @@ async function deleteNote(id, cardElement) {
   try {
     const response = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Não foi possível eliminar');
-    cardElement.remove();
+    if (cardElement) cardElement.remove();
     allNotes = allNotes.filter(n => n.id !== id);
     updateDynamicMetrics(allNotes);
     if (allNotes.length === 0) renderFilteredNotes();

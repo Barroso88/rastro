@@ -178,6 +178,25 @@
       </div>
     </div>
 
+    <!-- Modal Visualizar Nota -->
+    <div class="modal-backdrop" id="view-modal">
+      <div class="modal modal-lg">
+        <button class="modal-close" id="close-view">×</button>
+        <div class="view-header">
+          <span class="tag coral-tag" id="view-tag">GERAL</span>
+          <span class="view-date" id="view-date">Agora</span>
+        </div>
+        <h2 id="view-title">Título da nota</h2>
+        <div id="view-video" class="view-video-wrapper"></div>
+        <div class="view-content markdown-body" id="view-content"></div>
+        <div class="modal-actions">
+          <button class="btn-delete-view" id="view-delete-btn">Eliminar nota</button>
+          <button class="copy-btn" id="view-copy-btn">Copiar texto</button>
+          <button class="save" id="close-view-btn">Fechar</button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast" id="toast">Nota guardada ✓</div>
     <script src="app.js"></script>
   </body>
