@@ -107,18 +107,65 @@ app.post('/api/import/github', async (req, res) => {
   }
 });
 
+function getAiEndpointAndModel() {
+  let rawUrl = String(process.env.AI_BASE_URL || '').trim();
+  let model = String(process.env.AI_MODEL || '').trim();
+
+  // Sem URL especificado -> OpenAI padrão
+  if (!rawUrl) {
+    return {
+      endpoint: 'https://api.openai.com/v1/chat/completions',
+      model: model || 'gpt-4o-mini'
+    };
+  }
+
+  // Remove caminhos redundantes adicionados acidentalmente
+  rawUrl = rawUrl.replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '');
+
+  // Auto-correção para Google Gemini
+  if (rawUrl.includes('generativelanguage.googleapis.com')) {
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    if (!model || model.startsWith('grok') || model.startsWith('gpt')) {
+      model = 'gemini-1.5-flash';
+    }
+    return { endpoint, model };
+  }
+
+  // Auto-correção para xAI (Grok)
+  if (rawUrl.includes('api.x.ai')) {
+    const endpoint = 'https://api.x.ai/v1/chat/completions';
+    if (!model || model.startsWith('gemini') || model.startsWith('gpt')) {
+      model = 'grok-2-latest';
+    }
+    return { endpoint, model };
+  }
+
+  // Auto-correção para Groq
+  if (rawUrl.includes('api.groq.com')) {
+    const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+    if (!model || model.startsWith('gemini') || model.startsWith('grok')) {
+      model = 'llama-3.3-70b-versatile';
+    }
+    return { endpoint, model };
+  }
+
+  // Outros endpoints (Ollama, vLLM, etc.)
+  return {
+    endpoint: `${rawUrl}/chat/completions`,
+    model: model || 'gpt-4o-mini'
+  };
+}
+
 async function organizeGuide({ owner, repo, readme }) {
   const apiKey = process.env.AI_API_KEY;
   if (!apiKey) {
     throw new Error('A variável AI_API_KEY não está configurada no servidor Docker.');
   }
 
-  const baseUrl = (process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
-  const model = process.env.AI_MODEL || 'gemini-2.0-flash';
+  const { endpoint, model } = getAiEndpointAndModel();
+  console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${endpoint} (modelo: ${model})...`);
 
-  console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${baseUrl} (modelo: ${model})...`);
-
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
