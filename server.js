@@ -162,27 +162,10 @@ async function organizeGuide({ owner, repo, readme }) {
     throw new Error('A variável AI_API_KEY não está configurada no servidor Docker.');
   }
 
-  const { endpoint, model } = getAiEndpointAndModel();
-  console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${endpoint} (modelo: ${model})...`);
+  const rawUrl = String(process.env.AI_BASE_URL || '').trim();
+  const isGoogle = apiKey.startsWith('AIzaSy') || rawUrl.includes('googleapis') || rawUrl.includes('gemini');
 
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiKey}`
-  };
-  if (endpoint.includes('googleapis.com')) {
-    headers['x-goog-api-key'] = apiKey;
-  }
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      messages: [
-        {
-          role: 'system',
-          content: `És um editor técnico sénior de Portugal, especialista em documentação de software, DevOps, hardware e projetos DIY/domótica.
+  const systemPrompt = `És um editor técnico sénior de Portugal, especialista em documentação de software, DevOps, hardware e projetos DIY/domótica.
 O teu objetivo é transformar a documentação fornecida num guia técnico prático e de referência em Português de Portugal (PT-PT).
 
 Diretrizes essenciais:
@@ -216,29 +199,88 @@ Breve descrição de como o projeto funciona por dentro (daemons, ferramentas CL
 ## Problemas Comuns e Dicas
 Lista prática de resoluções de problemas frequentes, testes e comandos úteis para diagnóstico.
 
-A primeira linha da tua resposta DEVE ser o título do guia começando por "# ". Não uses blocos de código a envolver todo o texto.`
+A primeira linha da tua resposta DEVE ser o título do guia começando por "# ". Não uses blocos de código a envolver todo o texto.`;
+
+  const userContent = `Repositório: ${owner}/${repo}\n\nDocumentação README original:\n${readme.slice(0, 45000)}`;
+
+  let rawText = '';
+
+  if (isGoogle) {
+    // API Nativa do Google Gemini (sem depender de adaptador /openai/)
+    let model = String(process.env.AI_MODEL || '').trim();
+    if (!model || model.startsWith('grok') || model.startsWith('gpt')) {
+      model = 'gemini-1.5-flash';
+    }
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    console.log(`[Rastro AI] A enviar ${owner}/${repo} para Google Gemini Nativo (${model})...`);
+
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemPrompt }]
         },
-        {
-          role: 'user',
-          content: `Repositório: ${owner}/${repo}\n\nDocumentação README original:\n${readme.slice(0, 45000)}`
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: userContent }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.2
         }
-      ]
-    })
-  });
+      })
+    });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`[Rastro AI] Erro HTTP ${response.status} da API:`, errorBody);
-    let errorDetail = `Erro HTTP ${response.status}`;
-    try {
-      const parsedErr = JSON.parse(errorBody);
-      errorDetail = parsedErr.error?.message || parsedErr.message || errorDetail;
-    } catch {}
-    throw new Error(`A API de IA devolveu erro (${response.status}): ${errorDetail}`);
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`[Rastro AI] Erro HTTP ${response.status} do Google Gemini:`, errorBody);
+      let errorDetail = `Erro HTTP ${response.status}`;
+      try {
+        const parsedErr = JSON.parse(errorBody);
+        errorDetail = parsedErr.error?.message || parsedErr.message || errorDetail;
+      } catch {}
+      throw new Error(`Google Gemini devolveu erro (${response.status}): ${errorDetail}`);
+    }
+
+    const data = await response.json();
+    rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } else {
+    // API Compatível OpenAI (xAI Grok, Groq, Ollama, OpenAI)
+    const { endpoint, model } = getAiEndpointAndModel();
+    console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${endpoint} (${model})...`);
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`[Rastro AI] Erro HTTP ${response.status} da API:`, errorBody);
+      let errorDetail = `Erro HTTP ${response.status}`;
+      try {
+        const parsedErr = JSON.parse(errorBody);
+        errorDetail = parsedErr.error?.message || parsedErr.message || errorDetail;
+      } catch {}
+      throw new Error(`A API de IA devolveu erro (${response.status}): ${errorDetail}`);
+    }
+
+    const data = await response.json();
+    rawText = data.choices?.[0]?.message?.content || '';
   }
-
-  const data = await response.json();
-  const rawText = data.choices?.[0]?.message?.content || '';
 
   if (!rawText.trim()) {
     throw new Error('A API de IA não devolveu conteúdo.');
