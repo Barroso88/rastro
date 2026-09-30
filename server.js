@@ -114,7 +114,7 @@ async function organizeGuide({ owner, repo, readme }) {
   }
 
   const baseUrl = (process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
-  const model = process.env.AI_MODEL || 'grok-2-latest';
+  const model = process.env.AI_MODEL || 'gemini-2.0-flash';
 
   console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${baseUrl} (modelo: ${model})...`);
 
@@ -126,33 +126,43 @@ async function organizeGuide({ owner, repo, readme }) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.3,
+      temperature: 0.2,
       messages: [
         {
           role: 'system',
-          content: `És um editor técnico de Portugal especialista em documentação de software e projetos de computação/eletrónica.
-O teu trabalho é reescrever integralmente a documentação em Português de Portugal (PT-PT), com rigor e clareza.
-Mantém comandos de terminal, nomes de pacotes, código e caminhos de ficheiros intactos.
+          content: `És um editor técnico sénior de Portugal, especialista em documentação de software, DevOps, hardware e projetos DIY/domótica.
+O teu objetivo é transformar a documentação fornecida num guia técnico prático e de referência em Português de Portugal (PT-PT).
 
-Estrutura o teu texto OBRIGATORIAMENTE assim em Markdown:
-# [Título claro e elucidativo do guia]
+Diretrizes essenciais:
+1. Usa Português de Portugal natural, correto e técnico (ex.: "ecrã", "ficheiro", "utilizador", "arranque", "consola", "rede").
+2. NUNCA traduzas termos técnicos padrão, nomes de comandos, variáveis, código, caminhos de ficheiros ou nomes de integrações (ex.: mantém "media_player", "openWakeWord", "docker-compose", "npm install", "ESPHome", URLs).
+3. Formata comandos e código em blocos Markdown com a sintaxe apropriada (\`\`\`bash, \`\`\`yaml, etc.).
+
+Estrutura OBRIGATÓRIA do documento:
+
+# [Nome do Projeto] — [Subtítulo claro e elucidativo do que faz]
+
 ## Objetivo
-Explica em poucas palavras o que este projeto faz e qual o seu benefício.
+Explicação concisa e direta do que é o projeto, que problema resolve e qual o seu benefício prático.
 
 ## Requisitos
-Lista de pré-requisitos de sistema, dependências ou hardware.
+- **Hardware:** (se aplicável, lista de dispositivos, placas ou especificações)
+- **Software / Dependências:** (versões de sistema, runtimes, ferramentas CLI necessárias)
+
+## Funcionalidades Principais
+Lista com as capacidades chave do projeto, explicadas de forma clara e objetiva.
 
 ## Instalação
-Passo a passo com os comandos exatos de instalação.
+Passo a passo sequencial com todos os comandos exatos de instalação, setup ou gravação de firmware.
 
-## Configuração
-Ficheiros de ambiente, portas e variáveis necessárias.
+## Configuração e Integração
+Exemplos práticos de ficheiros de configuração (variáveis .env, YAML, portas de rede) e como integrar com outros sistemas (ex.: Home Assistant, Unraid, etc. se aplicável).
 
-## Execução
-Como iniciar o projeto e comandos úteis.
+## Arquitetura Técnica
+Breve descrição de como o projeto funciona por dentro (daemons, ferramentas CLI, protocolos ou bibliotecas).
 
-## Problemas Comuns
-Dicas e soluções para os erros mais frequentes.
+## Problemas Comuns e Dicas
+Lista prática de resoluções de problemas frequentes, testes e comandos úteis para diagnóstico.
 
 A primeira linha da tua resposta DEVE ser o título do guia começando por "# ". Não uses blocos de código a envolver todo o texto.`
         },
