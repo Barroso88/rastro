@@ -165,12 +165,17 @@ async function organizeGuide({ owner, repo, readme }) {
   const { endpoint, model } = getAiEndpointAndModel();
   console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${endpoint} (modelo: ${model})...`);
 
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${apiKey}`
+  };
+  if (endpoint.includes('googleapis.com')) {
+    headers['x-goog-api-key'] = apiKey;
+  }
+
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`
-    },
+    headers,
     body: JSON.stringify({
       model,
       temperature: 0.2,
