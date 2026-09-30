@@ -11,8 +11,21 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgres:
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(__dirname));
 
-// Mantém bases já existentes compatíveis com a funcionalidade de vídeos.
-pool.query('ALTER TABLE notes ADD COLUMN IF NOT EXISTS youtube_url TEXT').catch(error => console.error('Migração:', error.message));
+// Cria/atualiza a estrutura automaticamente para facilitar a instalação pelo Unraid.
+async function ensureSchema() {
+  for (let attempt = 1; attempt <= 20; attempt += 1) {
+    try {
+      await pool.query(`CREATE TABLE IF NOT EXISTS notes (id BIGSERIAL PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL DEFAULT '', project TEXT NOT NULL DEFAULT 'Loja online', youtube_url TEXT, tags TEXT[] NOT NULL DEFAULT '{}', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+      await pool.query('ALTER TABLE notes ADD COLUMN IF NOT EXISTS youtube_url TEXT');
+      await pool.query("CREATE INDEX IF NOT EXISTS notes_search_idx ON notes USING GIN (to_tsvector('simple', title || ' ' || content))");
+      return;
+    } catch (error) {
+      if (attempt === 20) console.error('Não foi possível preparar a base de dados:', error.message);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+  }
+}
+ensureSchema();
 
 app.get('/api/health', async (_req, res) => {
   try { await pool.query('SELECT 1'); res.json({ ok: true }); }
