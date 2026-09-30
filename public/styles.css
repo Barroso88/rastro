@@ -39,6 +39,82 @@ body.dark ::placeholder {
   min-height: 100vh;
 }
 
+/* ========================================================
+   TEMAS DINÂMICOS DE NOTAS (8 CORES NÃO REPETITIVAS)
+   Alto contraste e visibilidade garantida em texto e modais
+   ======================================================== */
+.theme-coral {
+  --card-accent: #e86f51;
+  --card-bg: #fffbf9;
+  --card-border: #f4dcd5;
+  --tag-bg: #feebe6;
+  --tag-color: #c4472a;
+  --tag-border: rgba(196, 71, 42, 0.25);
+}
+
+.theme-blue {
+  --card-accent: #2563eb;
+  --card-bg: #f8fbff;
+  --card-border: #d4e5f7;
+  --tag-bg: #e6f0fa;
+  --tag-color: #1d65a6;
+  --tag-border: rgba(29, 101, 166, 0.25);
+}
+
+.theme-emerald {
+  --card-accent: #059669;
+  --card-bg: #f7fcf9;
+  --card-border: #d1eee0;
+  --tag-bg: #e8f7ee;
+  --tag-color: #0f7652;
+  --tag-border: rgba(15, 118, 82, 0.25);
+}
+
+.theme-amber {
+  --card-accent: #d97706;
+  --card-bg: #fdfbf4;
+  --card-border: #faebd0;
+  --tag-bg: #fef3d8;
+  --tag-color: #96600c;
+  --tag-border: rgba(150, 96, 12, 0.25);
+}
+
+.theme-purple {
+  --card-accent: #7c3aed;
+  --card-bg: #faf8fe;
+  --card-border: #e9e0fa;
+  --tag-bg: #f3ecfe;
+  --tag-color: #6230bd;
+  --tag-border: rgba(98, 48, 189, 0.25);
+}
+
+.theme-cyan {
+  --card-accent: #0891b2;
+  --card-bg: #f6fbfa;
+  --card-border: #cdeadc;
+  --tag-bg: #e2f7f9;
+  --tag-color: #0d7685;
+  --tag-border: rgba(13, 118, 133, 0.25);
+}
+
+.theme-rose {
+  --card-accent: #e11d48;
+  --card-bg: #fff8f9;
+  --card-border: #fedee4;
+  --tag-bg: #ffe8ec;
+  --tag-color: #b31c38;
+  --tag-border: rgba(179, 28, 56, 0.25);
+}
+
+.theme-indigo {
+  --card-accent: #4f46e5;
+  --card-bg: #f8f8fe;
+  --card-border: #dfe1fa;
+  --tag-bg: #eceeff;
+  --tag-color: #3d40af;
+  --tag-border: rgba(61, 64, 175, 0.25);
+}
+
 /* Barra Lateral */
 .sidebar {
   width: 246px;
@@ -71,7 +147,7 @@ body.dark ::placeholder {
   font-size: 19px;
 }
 
-/* Botão Nova Nota na Barra Lateral (Coral com texto branco em ambos os temas) */
+/* Botão Nova Nota na Barra Lateral */
 .new-note {
   height: 42px;
   border: 0;
@@ -518,16 +594,18 @@ body.dark ::placeholder {
   margin-left: 6px;
 }
 
-/* Lista de Cartões (Dashboard) */
+/* Lista de Cartões (Dashboard e Categoria) */
 .note-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
 }
 
+/* Cartão de Nota com Cor e Borda Temática */
 .note-card {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--card-bg, var(--card));
+  border: 1px solid var(--card-border, var(--line));
+  border-top: 4px solid var(--card-accent, var(--coral));
   border-radius: 11px;
   padding: 17px;
   min-height: 220px;
@@ -541,14 +619,8 @@ body.dark ::placeholder {
 
 .note-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-  border-color: #d8d6ce;
-}
-
-.note-card.featured {
-  background: #202126;
-  color: #fff;
-  border-color: #202126;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  border-color: var(--card-accent, var(--coral));
 }
 
 .note-top {
@@ -557,7 +629,7 @@ body.dark ::placeholder {
   align-items: center;
 }
 
-/* Badges e Etiquetas (Tags) com alto contraste */
+/* Badges e Etiquetas (Tags) com Alto Contraste */
 .tag {
   display: inline-flex;
   align-items: center;
@@ -567,17 +639,10 @@ body.dark ::placeholder {
   text-transform: uppercase;
   padding: 3px 8px;
   border-radius: 6px;
+  background: var(--tag-bg, #feebe6);
+  color: var(--tag-color, #c4472a);
+  border: 1px solid var(--tag-border, transparent);
 }
-
-.coral-tag { background: #feebe6; color: #c4472a; }
-.blue-tag { background: #e6f0f8; color: #28608f; }
-.yellow-tag { background: #fdf5df; color: #8e6810; }
-.green-tag { background: #eaf6ee; color: #267245; }
-
-.note-card.featured .coral-tag { background: #44241e; color: #ffa28b; }
-.note-card.featured .blue-tag { background: #1c3245; color: #92c5ee; }
-.note-card.featured .yellow-tag { background: #423617; color: #eed47d; }
-.note-card.featured .green-tag { background: #183e29; color: #85e2a8; }
 
 .note-actions {
   display: flex;
@@ -602,25 +667,12 @@ body.dark ::placeholder {
   background: rgba(232, 111, 81, 0.12);
 }
 
-.featured .btn-delete {
-  color: #a4a5ab;
-}
-
-.featured .btn-delete:hover {
-  color: #ff9d85;
-  background: rgba(255, 255, 255, 0.1);
-}
-
 .note-card h3 {
   font: 600 16px/1.3 'Space Grotesk', sans-serif;
   margin: 18px 0 10px;
   letter-spacing: -.3px;
   word-break: break-word;
   color: var(--ink);
-}
-
-.note-card.featured h3 {
-  color: #ffffff;
 }
 
 .note-card p {
@@ -638,10 +690,6 @@ body.dark ::placeholder {
   -webkit-box-orient: vertical;
 }
 
-.featured p {
-  color: #cbccd1;
-}
-
 .note-footer {
   display: flex;
   align-items: center;
@@ -653,10 +701,6 @@ body.dark ::placeholder {
   color: #65676f;
 }
 
-.featured .note-footer {
-  color: #a2a3a9;
-}
-
 .read-progress {
   height: 3px;
   background: #e2e1dc;
@@ -664,13 +708,9 @@ body.dark ::placeholder {
   flex: 1;
 }
 
-.featured .read-progress {
-  background: #3e3f46;
-}
-
 .read-progress i {
   display: block;
-  background: var(--coral);
+  background: var(--card-accent, var(--coral));
   height: 100%;
   width: 70%;
   border-radius: 4px;
@@ -903,7 +943,7 @@ body.dark ::placeholder {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
 }
 
-/* Botão Nova Nota na Categoria (Coral com texto branco em ambos os temas) */
+/* Botão Nova Nota na Categoria */
 .btn-category-add {
   border: 0;
   background: var(--coral);
@@ -955,8 +995,9 @@ body.dark ::placeholder {
 }
 
 .note-list-row {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--card-bg, var(--card));
+  border: 1px solid var(--card-border, var(--line));
+  border-left: 4px solid var(--card-accent, var(--coral));
   border-radius: 10px;
   padding: 14px 18px;
   display: flex;
@@ -970,11 +1011,7 @@ body.dark ::placeholder {
 .note-list-row:hover {
   transform: translateX(4px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-  border-color: var(--coral);
-}
-
-.note-list-row.featured {
-  border-left: 4px solid var(--coral);
+  border-color: var(--card-accent, var(--coral));
 }
 
 .note-list-row .row-main {
@@ -1041,11 +1078,13 @@ body.dark ::placeholder {
   box-shadow: 0 20px 70px rgba(0, 0, 0, 0.25);
 }
 
+/* Modal de Visualização da Nota com Borda Temática Superior */
 .modal-lg {
   width: min(760px, calc(100% - 30px));
   max-height: 86vh;
   display: flex;
   flex-direction: column;
+  border-top: 5px solid var(--card-accent, var(--coral));
 }
 
 .modal-close {
@@ -1320,10 +1359,6 @@ body.dark ::placeholder {
   font-size: 12px;
 }
 
-.featured .youtube-thumb {
-  margin-top: 14px;
-}
-
 .optional {
   color: #6e7078;
   font-size: 11px;
@@ -1339,10 +1374,6 @@ body.dark ::placeholder {
   margin-top: 12px;
 }
 
-.featured .youtube-link {
-  color: #ff9d85;
-}
-
 /* ========================================================
    TEMA ESCURO (DARK MODE) — ALTO CONTRASTE E LEGIBILIDADE
    ======================================================== */
@@ -1353,6 +1384,79 @@ body.dark {
   --line: #35363c;
   --paper: #18191d;
   --card: #222328;
+}
+
+/* 8 Temas Dinâmicos no Modo Escuro */
+body.dark .theme-coral {
+  --card-accent: #e86f51;
+  --card-bg: #272124;
+  --card-border: #423238;
+  --tag-bg: rgba(232, 111, 81, 0.2);
+  --tag-color: #ffa28b;
+  --tag-border: rgba(232, 111, 81, 0.45);
+}
+
+body.dark .theme-blue {
+  --card-accent: #3b82f6;
+  --card-bg: #1c232c;
+  --card-border: #29394d;
+  --tag-bg: rgba(59, 130, 246, 0.2);
+  --tag-color: #93c5fd;
+  --tag-border: rgba(59, 130, 246, 0.45);
+}
+
+body.dark .theme-emerald {
+  --card-accent: #10b981;
+  --card-bg: #1b2622;
+  --card-border: #263d33;
+  --tag-bg: rgba(16, 185, 129, 0.2);
+  --tag-color: #6ee7b7;
+  --tag-border: rgba(16, 185, 129, 0.45);
+}
+
+body.dark .theme-amber {
+  --card-accent: #f59e0b;
+  --card-bg: #27241c;
+  --card-border: #463b25;
+  --tag-bg: rgba(245, 158, 11, 0.2);
+  --tag-color: #fcd34d;
+  --tag-border: rgba(245, 158, 11, 0.45);
+}
+
+body.dark .theme-purple {
+  --card-accent: #8b5cf6;
+  --card-bg: #24212c;
+  --card-border: #3c334e;
+  --tag-bg: rgba(139, 92, 246, 0.2);
+  --tag-color: #c4b5fd;
+  --tag-border: rgba(139, 92, 246, 0.45);
+}
+
+body.dark .theme-cyan {
+  --card-accent: #06b6d4;
+  --card-bg: #1b2628;
+  --card-border: #263e42;
+  --tag-bg: rgba(6, 182, 212, 0.2);
+  --tag-color: #67e8f9;
+  --tag-border: rgba(6, 182, 212, 0.45);
+}
+
+body.dark .theme-rose {
+  --card-accent: #f43f5e;
+  --card-bg: #281f23;
+  --card-border: #492b35;
+  --tag-bg: rgba(244, 63, 94, 0.2);
+  --tag-color: #fda4af;
+  --tag-border: rgba(244, 63, 94, 0.45);
+}
+
+body.dark .theme-indigo {
+  --card-accent: #6366f1;
+  --card-bg: #20222e;
+  --card-border: #333852;
+  --tag-bg: rgba(99, 102, 241, 0.2);
+  --tag-color: #a5b4fc;
+  --tag-border: rgba(99, 102, 241, 0.45);
 }
 
 body.dark .sidebar {
@@ -1462,8 +1566,7 @@ body.dark .orbit-chip {
 
 body.dark .stat-card,
 body.dark .activity-card,
-body.dark .empty-notes,
-body.dark .note-list-row {
+body.dark .empty-notes {
   background: #222328;
   border-color: var(--line);
 }
@@ -1488,55 +1591,27 @@ body.dark .section-heading a:hover {
   color: #ff9d85;
 }
 
-body.dark .note-card:not(.featured) {
-  background: #222328;
-  border-color: var(--line);
+body.dark .note-card {
+  background: var(--card-bg, #222328);
+  border: 1px solid var(--card-border, var(--line));
+  border-top: 4px solid var(--card-accent, var(--coral));
 }
 
-body.dark .note-card:not(.featured) h3 {
+body.dark .note-card h3 {
   color: #f4f3f0;
 }
 
-body.dark .note-card:not(.featured) p {
+body.dark .note-card p {
   color: #b5b6bc;
 }
 
-body.dark .note-card:not(.featured) .note-footer {
+body.dark .note-card .note-footer {
   color: #96979e;
 }
 
-body.dark .note-card:not(.featured):hover {
-  border-color: #4b4d57;
-}
-
-body.dark .note-card.featured {
-  background: #282a31;
-  border: 1px solid var(--coral);
-}
-
-/* Badges com alto contraste no tema escuro */
-body.dark .coral-tag {
-  background: rgba(232, 111, 81, 0.18);
-  color: #ff9b82;
-  border: 1px solid rgba(232, 111, 81, 0.35);
-}
-
-body.dark .blue-tag {
-  background: rgba(70, 122, 164, 0.22);
-  color: #8ec3ed;
-  border: 1px solid rgba(70, 122, 164, 0.35);
-}
-
-body.dark .yellow-tag {
-  background: rgba(221, 184, 78, 0.22);
-  color: #f2d479;
-  border: 1px solid rgba(221, 184, 78, 0.35);
-}
-
-body.dark .green-tag {
-  background: rgba(38, 114, 69, 0.25);
-  color: #7de2a5;
-  border: 1px solid rgba(38, 114, 69, 0.35);
+body.dark .note-card:hover {
+  border-color: var(--card-accent, var(--coral));
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
 body.dark .btn-delete {
@@ -1608,6 +1683,16 @@ body.dark .btn-category-add span {
   color: #ffffff;
 }
 
+body.dark .note-list-row {
+  background: var(--card-bg, #222328);
+  border: 1px solid var(--card-border, var(--line));
+  border-left: 4px solid var(--card-accent, var(--coral));
+}
+
+body.dark .note-list-row:hover {
+  border-color: var(--card-accent, var(--coral));
+}
+
 body.dark .note-list-row p {
   color: #a9aaaf;
 }
@@ -1618,6 +1703,10 @@ body.dark .note-list-row .row-meta {
 
 body.dark .modal {
   background: #24252a;
+}
+
+body.dark .modal-lg {
+  border-top: 5px solid var(--card-accent, var(--coral));
 }
 
 body.dark .modal-close {

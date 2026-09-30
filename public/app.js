@@ -173,14 +173,30 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-// Estilos de etiquetas baseados no nome do projeto
-const TAG_COLORS = ['coral', 'blue', 'yellow', 'green'];
-function getTagColorClass(project) {
-  const norm = String(project || '').toLowerCase();
-  if (norm === 'diy') return 'coral-tag';
+// Paleta dinâmica de temas para cada nota (sem repetir entre notas adjacentes)
+const NOTE_THEMES = [
+  'theme-coral',
+  'theme-blue',
+  'theme-emerald',
+  'theme-amber',
+  'theme-purple',
+  'theme-cyan',
+  'theme-rose',
+  'theme-indigo'
+];
+
+function getNoteTheme(note, index = null) {
+  if (typeof index === 'number' && index >= 0) {
+    return NOTE_THEMES[index % NOTE_THEMES.length];
+  }
+  const idNum = parseInt(note?.id, 10);
+  if (!isNaN(idNum)) {
+    return NOTE_THEMES[Math.abs(idNum) % NOTE_THEMES.length];
+  }
   let hash = 0;
-  for (let i = 0; i < norm.length; i++) hash = (hash + norm.charCodeAt(i)) % TAG_COLORS.length;
-  return `${TAG_COLORS[hash]}-tag`;
+  const str = String(note?.title || note?.id || 'rastro');
+  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
+  return NOTE_THEMES[Math.abs(hash) % NOTE_THEMES.length];
 }
 
 function formatRelativeTime(dateString) {
@@ -249,13 +265,19 @@ function renderMarkdown(text) {
   return paragraphs.join('\n');
 }
 
-// Abrir modal de leitura completa
-function openViewModal(note) {
+// Abrir modal de leitura completa com o tema dinâmico da nota
+function openViewModal(note, themeClass = null) {
   currentViewingNote = note;
   viewTitle.textContent = note.title;
 
-  const tagClass = getTagColorClass(note.project);
-  viewTag.className = `tag ${tagClass}`;
+  const modalBox = viewModal.querySelector('.modal');
+  if (modalBox) {
+    NOTE_THEMES.forEach(t => modalBox.classList.remove(t));
+    const chosenTheme = themeClass || getNoteTheme(note);
+    modalBox.classList.add(chosenTheme);
+  }
+
+  viewTag.className = 'tag';
   viewTag.textContent = (note.project || 'Geral').toUpperCase();
 
   const formattedDate = new Date(note.updated_at || note.created_at).toLocaleString('pt-PT', {
@@ -301,23 +323,23 @@ viewDeleteBtn?.addEventListener('click', () => {
   closeViewModal();
 });
 
-// Criar elemento de Cartão (Modo Grelha)
-function createNoteElement(note, isFirst = false) {
+// Criar elemento de Cartão (Modo Grelha) com cor temática dinâmica
+function createNoteElement(note, index = 0) {
+  const themeClass = getNoteTheme(note, index);
   const card = document.createElement('article');
-  card.className = `note-card ${isFirst ? 'featured' : ''}`;
+  card.className = `note-card ${themeClass}`;
   card.dataset.id = note.id;
   card.dataset.title = note.title;
   card.dataset.project = note.project || 'Geral';
 
   const videoId = getYoutubeId(note.youtube_url);
-  const tagClass = getTagColorClass(note.project);
   const projectLabel = escapeHtml((note.project || 'Geral').toUpperCase());
   const relativeTime = formatRelativeTime(note.updated_at || note.created_at);
   const readTime = calculateReadTime(note.content);
 
   card.innerHTML = `
     <div class="note-top">
-      <span class="tag ${tagClass}">${projectLabel}</span>
+      <span class="tag">${projectLabel}</span>
       <div class="note-actions">
         <button class="btn-delete" title="Eliminar nota" aria-label="Eliminar nota">✕</button>
       </div>
@@ -340,7 +362,7 @@ function createNoteElement(note, isFirst = false) {
     </div>
   `;
 
-  card.addEventListener('click', () => openViewModal(note));
+  card.addEventListener('click', () => openViewModal(note, themeClass));
 
   card.querySelector('.btn-delete')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -353,20 +375,20 @@ function createNoteElement(note, isFirst = false) {
   return card;
 }
 
-// Criar elemento de Linha (Modo Lista)
-function createNoteListRow(note) {
+// Criar elemento de Linha (Modo Lista) com cor temática dinâmica
+function createNoteListRow(note, index = 0) {
+  const themeClass = getNoteTheme(note, index);
   const row = document.createElement('div');
-  row.className = 'note-list-row';
+  row.className = `note-list-row ${themeClass}`;
   row.dataset.id = note.id;
 
-  const tagClass = getTagColorClass(note.project);
   const projectLabel = escapeHtml((note.project || 'Geral').toUpperCase());
   const relativeTime = formatRelativeTime(note.updated_at || note.created_at);
   const readTime = calculateReadTime(note.content);
   const hasVideo = Boolean(getYoutubeId(note.youtube_url));
 
   row.innerHTML = `
-    <span class="tag ${tagClass}">${projectLabel}</span>
+    <span class="tag">${projectLabel}</span>
     ${hasVideo ? '<span class="yt-indicator" title="Contém vídeo YouTube">▶</span>' : ''}
     <div class="row-main">
       <h3>${escapeHtml(note.title)}</h3>
@@ -379,7 +401,7 @@ function createNoteListRow(note) {
     </div>
   `;
 
-  row.addEventListener('click', () => openViewModal(note));
+  row.addEventListener('click', () => openViewModal(note, themeClass));
 
   row.querySelector('.btn-delete')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -441,7 +463,7 @@ function renderDashboardRecentNotes(searchQuery = '') {
   // No dashboard mostra as 6 mais recentes
   const recentList = list.slice(0, 6);
   recentList.forEach((note, index) => {
-    noteList.appendChild(createNoteElement(note, index === 0));
+    noteList.appendChild(createNoteElement(note, index));
   });
 }
 
@@ -481,13 +503,13 @@ function renderCategoryNotes(searchQuery = '') {
 
   if (currentDisplayMode === 'grid') {
     categoryNotesContainer.className = 'category-notes-grid';
-    list.forEach((note) => {
-      categoryNotesContainer.appendChild(createNoteElement(note, false));
+    list.forEach((note, index) => {
+      categoryNotesContainer.appendChild(createNoteElement(note, index));
     });
   } else {
     categoryNotesContainer.className = 'category-notes-list';
-    list.forEach((note) => {
-      categoryNotesContainer.appendChild(createNoteListRow(note));
+    list.forEach((note, index) => {
+      categoryNotesContainer.appendChild(createNoteListRow(note, index));
     });
   }
 }
