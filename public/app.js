@@ -674,35 +674,37 @@ document.querySelector('#nav-recent')?.addEventListener('click', (e) => {
   showCategoryView('all');
 });
 
-// Importar GitHub com IA
+// Importar com IA (GitHub, XDA, Fóruns, Tutoriais Web)
 document.querySelector('#import-github')?.addEventListener('click', async () => {
   const url = githubInput.value.trim();
   if (!url) return githubInput.focus();
 
   const button = document.querySelector('#import-github');
   button.disabled = true;
-  button.innerHTML = 'A organizar guia com IA…';
+  button.innerHTML = 'A analisar e organizar com IA…';
 
   try {
-    const response = await fetch('/api/import/github', {
+    const response = await fetch('/api/import/url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Não foi possível importar o repositório');
+    if (!response.ok) throw new Error(data.error || 'Não foi possível processar o URL');
 
     closeGithubModal();
     githubInput.value = '';
     showToast('Guia DIY criado com sucesso ✓');
     await loadNotes();
     showCategoryView('DIY');
+    // Abre imediatamente o guia gerado para consulta
+    openViewModal(data);
   } catch (error) {
-    console.error('Erro na importação GitHub:', error);
-    showToast(error.message || 'Erro ao importar repositório', true);
+    console.error('Erro na importação com IA:', error);
+    showToast(error.message || 'Erro ao importar com IA', true);
   } finally {
     button.disabled = false;
-    button.innerHTML = 'Organizar guia com IA <span>→</span>';
+    button.innerHTML = 'Organizar guia com IA <span>⌁</span>';
   }
 });
 

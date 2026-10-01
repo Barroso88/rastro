@@ -81,31 +81,125 @@ app.post('/api/notes', async (req, res) => {
   }
 });
 
-app.post('/api/import/github', async (req, res) => {
+async function fetchUrlContent(url) {
+  const trimmedUrl = String(url || '').trim();
+  if (!/^https?:\/\//i.test(trimmedUrl)) {
+    throw new Error('Indica um URL válido começado por http:// ou https://');
+  }
+
+  // 1. Caso especial: Repositório GitHub
+  const ghMatch = trimmedUrl.match(/^https?:\/\/github\.com\/([^/]+)\/([^/#?]+)(?:[/?#].*)?$/i);
+  if (ghMatch) {
+    const [, owner, repo] = ghMatch;
+    for (const branch of ['HEAD', 'main', 'master']) {
+      try {
+        const readmeRes = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`, {
+          headers: { 'User-Agent': 'rastro-app' },
+          signal: AbortSignal.timeout(10000)
+        });
+        if (readmeRes.ok) {
+          const text = await readmeRes.text();
+          if (text.trim().length > 30) {
+            return {
+              sourceName: `${owner}/${repo}`,
+              sourceUrl: trimmedUrl,
+              content: text,
+              isGithub: true
+            };
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // 2. Fóruns e Páginas Web (XDA, Reddit, Tutoriais, Artigos)
+  // Utilizamos o Jina Reader (r.jina.ai) para ultrapassar proteções anti-bot (Cloudflare, Bunny Shield) e extrair Markdown limpo
+  try {
+    const jinaUrl = `https://r.jina.ai/${trimmedUrl}`;
+    const jinaRes = await fetch(jinaUrl, {
+      headers: {
+        'User-Agent': 'rastro-app',
+        'X-No-Cache': 'true'
+      },
+      signal: AbortSignal.timeout(25000)
+    });
+    if (jinaRes.ok) {
+      const markdown = await jinaRes.text();
+      if (markdown.trim().length > 100) {
+        const titleMatch = markdown.match(/^Title:\s*(.+)$/m);
+        const sourceName = titleMatch ? titleMatch[1].trim() : trimmedUrl;
+        return {
+          sourceName,
+          sourceUrl: trimmedUrl,
+          content: markdown,
+          isGithub: false
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[Rastro Import] Jina Reader falhou, a tentar acesso direto:', err.message);
+  }
+
+  // 3. Fallback direto caso o Jina Reader esteja indisponível
+  const directRes = await fetch(trimmedUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    },
+    signal: AbortSignal.timeout(15000)
+  });
+
+  if (!directRes.ok) {
+    throw new Error(`Não foi possível aceder ao endereço web (HTTP ${directRes.status}).`);
+  }
+
+  const html = await directRes.text();
+  const cleanText = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  if (cleanText.length < 100) {
+    throw new Error('A página não continha texto suficiente ou está bloqueada por proteção anti-bot.');
+  }
+
+  return {
+    sourceName: trimmedUrl,
+    sourceUrl: trimmedUrl,
+    content: cleanText,
+    isGithub: false
+  };
+}
+
+async function handleImport(req, res) {
   try {
     const url = String(req.body?.url || '').trim();
-    const match = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/#?]+)(?:[/?#].*)?$/i);
-    if (!match) {
-      return res.status(400).json({ error: 'Indica um URL válido de um repositório GitHub público.' });
+    if (!url) {
+      return res.status(400).json({ error: 'Indica um URL válido (GitHub, fórum XDA, tutorial ou artigo web).' });
     }
-    const [, owner, repo] = match;
-    const readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/HEAD/README.md`;
-    const response = await fetch(readmeUrl, { headers: { 'User-Agent': 'rastro-app' } });
-    if (!response.ok) {
-      return res.status(404).json({ error: 'Não foi possível encontrar um README público nesse repositório.' });
-    }
-    const readme = await response.text();
-    const guide = await organizeGuide({ owner, repo, readme });
+
+    console.log(`[Rastro Import] A recolher conteúdo de: ${url}`);
+    const sourceData = await fetchUrlContent(url);
+
+    console.log(`[Rastro Import] Conteúdo obtido (${sourceData.content.length} carateres). A estruturar com IA...`);
+    const guide = await organizeGuide(sourceData);
+
     const saved = await pool.query(
       'INSERT INTO notes (title, content, project, tags) VALUES ($1, $2, $3, $4) RETURNING *',
-      [guide.title || `Guia DIY — ${repo}`, guide.content || readme, 'DIY', ['github', 'diy', 'guia']]
+      [guide.title || `Guia DIY — ${sourceData.sourceName}`, guide.content, 'DIY', ['diy', 'tutorial', 'ia']]
     );
+
     res.status(201).json(saved.rows[0]);
   } catch (error) {
-    console.error('Erro ao importar repositório do GitHub:', error.message);
+    console.error('Erro na importação com IA:', error.message);
     res.status(500).json({ error: error.message || 'Falha ao processar o guia com IA.' });
   }
-});
+}
+
+app.post('/api/import/url', handleImport);
+app.post('/api/import/github', handleImport);
 
 function getAiEndpointAndModel() {
   let rawUrl = String(process.env.AI_BASE_URL || '').trim();
@@ -156,7 +250,7 @@ function getAiEndpointAndModel() {
   };
 }
 
-async function organizeGuide({ owner, repo, readme }) {
+async function organizeGuide({ sourceName, sourceUrl, content }) {
   const apiKey = process.env.AI_API_KEY;
   if (!apiKey) {
     throw new Error('A variável AI_API_KEY não está configurada no servidor Docker.');
@@ -169,43 +263,46 @@ async function organizeGuide({ owner, repo, readme }) {
                    rawUrl.includes('gemini') ||
                    (!apiKey.startsWith('sk-') && !apiKey.startsWith('xai-') && !apiKey.startsWith('gsk_') && !rawUrl);
 
-  const systemPrompt = `És um editor técnico sénior de Portugal, especialista em documentação de software, DevOps, hardware e projetos DIY/domótica.
-O teu objetivo é transformar a documentação fornecida num guia técnico prático e de referência em Português de Portugal (PT-PT).
+  const systemPrompt = `És um editor técnico sénior de Portugal, especialista em documentação de software, DevOps, hardware, engenharia reversa, firmware e projetos DIY/domótica.
+O teu objetivo é transformar a documentação, tutorial ou publicação fornecida num guia técnico prático e de referência em Português de Portugal (PT-PT).
 
 Diretrizes essenciais:
-1. Usa Português de Portugal natural, correto e técnico (ex.: "ecrã", "ficheiro", "utilizador", "arranque", "consola", "rede").
-2. NUNCA traduzas termos técnicos padrão, nomes de comandos, variáveis, código, caminhos de ficheiros ou nomes de integrações (ex.: mantém "media_player", "openWakeWord", "docker-compose", "npm install", "ESPHome", URLs).
+1. Usa Português de Portugal natural, correto e técnico (ex.: "ecrã", "ficheiro", "utilizador", "arranque", "consola", "rede", "dispositivo", "gravação").
+2. NUNCA traduzas termos técnicos padrão, nomes de comandos, variáveis, código, caminhos de ficheiros, partições, ferramentas ou nomes de integrações (ex.: mantém "fastboot", "TWRP", "root", "unbrick", "biscuit", "amonet", "adb", "flashing", "Home Assistant", URLs).
 3. Formata comandos e código em blocos Markdown com a sintaxe apropriada (\`\`\`bash, \`\`\`yaml, etc.).
+4. Se o tutorial incluir opções (ex: Opção 1 normal, Opção 2 unbrick com pino GND/hardware), estrutura claramente cada método com os passos detalhados.
+5. Preserva todos os links úteis de download de ficheiros, ferramentas ou anexos mencionados.
 
 Estrutura OBRIGATÓRIA do documento:
 
-# [Nome do Projeto] — [Subtítulo claro e elucidativo do que faz]
+# [Nome do Dispositivo / Projeto] — [Subtítulo claro e elucidativo do que faz]
 
 ## Objetivo
-Explicação concisa e direta do que é o projeto, que problema resolve e qual o seu benefício prático.
+Explicação concisa e direta do que é o projeto/tutorial, o que permite fazer (desbloquear, instalar firmware, root, integrar) e o benefício prático.
+
+## Avisos e Cuidados Importantes
+(Se aplicável, avisos de garantia, riscos de brick, versões de hardware suportadas).
 
 ## Requisitos
-- **Hardware:** (se aplicável, lista de dispositivos, placas ou especificações)
-- **Software / Dependências:** (versões de sistema, runtimes, ferramentas CLI necessárias)
+- **Hardware:** (dispositivo exato, cabos, computadores necessários)
+- **Software / Dependências:** (sistemas operativos suportados, drivers, pacotes Python, ferramentas CLI como adb/fastboot)
+- **Ficheiros e Ferramentas:** (links e nomes de ficheiros para download)
 
-## Funcionalidades Principais
-Lista com as capacidades chave do projeto, explicadas de forma clara e objetiva.
+## Preparação e Pré-requisitos
+Passos prévios necessários antes de iniciar o procedimento (colocar em modo fastboot, instalar drivers, etc.).
 
-## Instalação
-Passo a passo sequencial com todos os comandos exatos de instalação, setup ou gravação de firmware.
+## Instruções Passo a Passo
+Passo a passo sequencial, limpo e organizado com todos os comandos de consola e ações necessárias. Se houver métodos alternativos (ex.: Fastboot vs Hardware/Unbrick), divide em subsecções claras (### Método 1 ..., ### Método 2 ...).
 
-## Configuração e Integração
-Exemplos práticos de ficheiros de configuração (variáveis .env, YAML, portas de rede) e como integrar com outros sistemas (ex.: Home Assistant, Unraid, etc. se aplicável).
+## Pós-Instalação e Próximos Passos
+O que fazer após o procedimento (ex.: como entrar no TWRP, instalar ROM, integrar com Home Assistant, etc.).
 
-## Arquitetura Técnica
-Breve descrição de como o projeto funciona por dentro (daemons, ferramentas CLI, protocolos ou bibliotecas).
-
-## Problemas Comuns e Dicas
-Lista prática de resoluções de problemas frequentes, testes e comandos úteis para diagnóstico.
+## Resolução de Problemas (Troubleshooting)
+Lista prática de resoluções de erros frequentes, verificação de ligação USB e recuperação.
 
 A primeira linha da tua resposta DEVE ser o título do guia começando por "# ". Não uses blocos de código a envolver todo o texto.`;
 
-  const userContent = `Repositório: ${owner}/${repo}\n\nDocumentação README original:\n${readme.slice(0, 45000)}`;
+  const userContent = `Origem: ${sourceName} (${sourceUrl || ''})\n\nConteúdo original:\n${content.slice(0, 45000)}`;
 
   let rawText = '';
 
@@ -277,7 +374,7 @@ A primeira linha da tua resposta DEVE ser o título do guia começando por "# ".
   } else {
     // API Compatível OpenAI (xAI Grok, Groq, Ollama, OpenAI)
     const { endpoint, model } = getAiEndpointAndModel();
-    console.log(`[Rastro AI] A enviar ${owner}/${repo} para ${endpoint} (${model})...`);
+    console.log(`[Rastro AI] A enviar ${sourceName} para ${endpoint} (${model})...`);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -325,7 +422,7 @@ A primeira linha da tua resposta DEVE ser o título do guia começando por "# ".
 
   // Extração inteligente de título a partir de Markdown
   const lines = rawText.trim().split('\n');
-  let title = `Guia DIY — ${repo}`;
+  let title = `Guia DIY — ${sourceName}`;
   const headerIdx = lines.findIndex(l => l.trim().startsWith('# '));
   if (headerIdx !== -1) {
     title = lines[headerIdx].replace(/^#\s+/, '').trim();
