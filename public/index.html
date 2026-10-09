@@ -158,17 +158,17 @@
       </main>
     </div>
 
-    <!-- Modal Nova Nota -->
+    <!-- Modal Nova / Editar Nota -->
     <div class="modal-backdrop" id="modal">
       <div class="modal">
         <button class="modal-close" id="close-modal">×</button>
-        <span class="modal-kicker">NOVA NOTA</span>
-        <h2>Guardar no rastro</h2>
-        <p>Regista comandos, decisões ou tutoriais para consulta futura.</p>
+        <span class="modal-kicker" id="modal-kicker">NOVA NOTA</span>
+        <h2 id="modal-title">Guardar no rastro</h2>
+        <p id="modal-desc">Regista comandos, decisões ou tutoriais para consulta futura.</p>
         <label>Título
           <input id="note-title" type="text" placeholder="Título da nota ou tutorial..." required />
         </label>
-        <label>Projeto
+        <label>Projeto / Pasta
           <input id="note-project" list="project-suggestions" placeholder="Geral" value="Geral" />
           <datalist id="project-suggestions">
             <option value="Geral">
@@ -183,7 +183,7 @@
         </label>
         <div class="modal-actions">
           <button class="cancel" id="cancel-modal">Cancelar</button>
-          <button class="save" id="save-note">Guardar nota <span>→</span></button>
+          <button class="save" id="save-note"><span id="save-note-text">Guardar nota</span> <span>→</span></button>
         </div>
       </div>
     </div>
@@ -230,7 +230,13 @@
       <div class="modal modal-lg">
         <button class="modal-close" id="close-view">×</button>
         <div class="view-header">
-          <span class="tag coral-tag" id="view-tag">GERAL</span>
+          <div class="view-project-box">
+            <span class="tag" id="view-tag">GERAL</span>
+            <div class="change-project-wrapper" title="Alterar pasta/projeto desta nota">
+              <label for="change-note-project">📁 Pasta:</label>
+              <select id="change-note-project" class="project-dropdown"></select>
+            </div>
+          </div>
           <span class="view-date" id="view-date">Agora</span>
         </div>
         <h2 id="view-title">Título da nota</h2>
@@ -238,6 +244,7 @@
         <div class="view-content markdown-body" id="view-content"></div>
         <div class="modal-actions">
           <button class="btn-delete-view" id="view-delete-btn">Eliminar nota</button>
+          <button class="btn-edit-view" id="view-edit-btn">✎ Editar nota</button>
           <button class="copy-btn" id="view-copy-btn">Copiar texto</button>
           <button class="save" id="close-view-btn">Fechar</button>
         </div>

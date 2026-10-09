@@ -81,6 +81,44 @@ app.post('/api/notes', async (req, res) => {
   }
 });
 
+app.put('/api/notes/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+    const current = await pool.query('SELECT * FROM notes WHERE id = $1', [id]);
+    if (current.rows.length === 0) {
+      return res.status(404).json({ error: 'Nota não encontrada.' });
+    }
+
+    const note = current.rows[0];
+    const { title, content, project, tags, youtube_url } = req.body || {};
+
+    const newTitle = title !== undefined ? String(title).trim() : note.title;
+    const newContent = content !== undefined ? String(content) : note.content;
+    const newProject = project !== undefined ? String(project).trim() || 'Geral' : note.project;
+    const newTags = tags !== undefined ? (Array.isArray(tags) ? tags : [tags]) : note.tags;
+    const newYoutubeUrl = youtube_url !== undefined ? youtube_url : note.youtube_url;
+
+    if (!newTitle) {
+      return res.status(400).json({ error: 'O título é obrigatório.' });
+    }
+
+    const result = await pool.query(
+      `UPDATE notes
+       SET title = $1, content = $2, project = $3, tags = $4, youtube_url = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6
+       RETURNING *`,
+      [newTitle, newContent, newProject, newTags, newYoutubeUrl, id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao atualizar nota:', error.message);
+    res.status(500).json({ error: 'Não foi possível atualizar a nota.' });
+  }
+});
+
 async function fetchUrlContent(url) {
   const trimmedUrl = String(url || '').trim();
   if (!/^https?:\/\//i.test(trimmedUrl)) {

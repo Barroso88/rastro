@@ -1201,7 +1201,8 @@ body.dark ::placeholder {
 .cancel,
 .save,
 .copy-btn,
-.btn-delete-view {
+.btn-delete-view,
+.btn-edit-view {
   border: 0;
   border-radius: 8px;
   padding: 10px 16px;
@@ -1245,11 +1246,61 @@ body.dark ::placeholder {
   margin-right: auto;
 }
 
+.btn-edit-view {
+  background: #f1f0ea;
+  color: #2b2c31;
+  border: 1px solid var(--line);
+}
+
+.btn-edit-view:hover {
+  background: #e5e3db;
+}
+
 .view-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-right: 28px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.view-project-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.change-project-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #494b54;
+}
+
+.change-project-wrapper label {
+  margin: 0;
+  cursor: default;
+}
+
+.project-dropdown {
+  background: #ffffff;
+  color: #1f2024;
+  border: 1px solid #c8c9ce;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font: 600 12px 'DM Sans', sans-serif;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.project-dropdown:hover,
+.project-dropdown:focus {
+  border-color: var(--coral);
 }
 
 .view-date {
@@ -1827,6 +1878,32 @@ body.dark .btn-delete-view {
   background: #41231f;
   color: #ff9b82;
   border: 1px solid #582b26;
+}
+
+body.dark .btn-edit-view {
+  background: #2a2c34;
+  color: #f4f3f0;
+  border: 1px solid #3f414c;
+}
+
+body.dark .btn-edit-view:hover {
+  background: #353742;
+  color: #ffffff;
+}
+
+body.dark .change-project-wrapper {
+  color: #b2b4bc;
+}
+
+body.dark .project-dropdown {
+  background: #222328;
+  color: #f4f3f0;
+  border: 1px solid #444652;
+}
+
+body.dark .project-dropdown:hover,
+body.dark .project-dropdown:focus {
+  border-color: #e86f51;
 }
 
 body.dark .view-date {

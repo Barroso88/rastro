@@ -1,4 +1,8 @@
 const modal = document.querySelector('#modal');
+const modalKicker = document.querySelector('#modal-kicker');
+const modalTitle = document.querySelector('#modal-title');
+const modalDesc = document.querySelector('#modal-desc');
+const saveNoteText = document.querySelector('#save-note-text');
 const titleInput = document.querySelector('#note-title');
 const contentInput = document.querySelector('#note-content');
 const projectInput = document.querySelector('#note-project');
@@ -10,10 +14,12 @@ const githubInput = document.querySelector('#github-url');
 const viewModal = document.querySelector('#view-modal');
 const viewTitle = document.querySelector('#view-title');
 const viewTag = document.querySelector('#view-tag');
+const changeNoteProject = document.querySelector('#change-note-project');
 const viewDate = document.querySelector('#view-date');
 const viewContent = document.querySelector('#view-content');
 const viewVideo = document.querySelector('#view-video');
 const viewCopyBtn = document.querySelector('#view-copy-btn');
+const viewEditBtn = document.querySelector('#view-edit-btn');
 const viewDeleteBtn = document.querySelector('#view-delete-btn');
 
 // Vistas da aplicação
@@ -43,6 +49,7 @@ let currentFilter = 'all';
 let currentActiveView = 'dashboard'; // 'dashboard' | 'category'
 let currentDisplayMode = localStorage.getItem('rastro-view-mode') || 'grid'; // 'grid' | 'list'
 let currentViewingNote = null;
+let editingNoteId = null;
 
 // Formatação da data atual no cabeçalho
 const todayEyebrow = document.querySelector('#today-eyebrow');
@@ -54,11 +61,43 @@ if (todayEyebrow) {
 
 // Abertura e fecho de modais
 const openModal = (defaultProject = '') => {
-  if (defaultProject) projectInput.value = defaultProject;
+  editingNoteId = null;
+  if (modalKicker) modalKicker.textContent = 'NOVA NOTA';
+  if (modalTitle) modalTitle.textContent = 'Guardar no rastro';
+  if (modalDesc) modalDesc.textContent = 'Regista comandos, decisões ou tutoriais para consulta futura.';
+  if (saveNoteText) saveNoteText.textContent = 'Guardar nota';
+
+  titleInput.value = '';
+  contentInput.value = '';
+  youtubeInput.value = '';
+  projectInput.value = defaultProject || (currentFilter !== 'all' ? currentFilter : 'Geral');
+
   modal.classList.add('open');
   titleInput.focus();
 };
-const closeModal = () => modal.classList.remove('open');
+
+const openEditModal = (note) => {
+  if (!note) return;
+  editingNoteId = note.id;
+  if (modalKicker) modalKicker.textContent = 'EDITAR NOTA';
+  if (modalTitle) modalTitle.textContent = 'Editar nota';
+  if (modalDesc) modalDesc.textContent = 'Modifica o título, conteúdo, pasta do projeto ou link do tutorial.';
+  if (saveNoteText) saveNoteText.textContent = 'Guardar alterações';
+
+  titleInput.value = note.title || '';
+  contentInput.value = note.content || '';
+  projectInput.value = note.project || 'Geral';
+  youtubeInput.value = note.youtube_url || '';
+
+  closeViewModal();
+  modal.classList.add('open');
+  titleInput.focus();
+};
+
+const closeModal = () => {
+  modal.classList.remove('open');
+  editingNoteId = null;
+};
 
 const openGithubModal = () => { githubModal.classList.add('open'); githubInput.focus(); };
 const closeGithubModal = () => githubModal.classList.remove('open');
@@ -265,6 +304,53 @@ function renderMarkdown(text) {
   return paragraphs.join('\n');
 }
 
+// Projetos conhecidos no sistema
+function getAllKnownProjects() {
+  const set = new Set();
+  set.add('Geral');
+  set.add('DIY');
+  allNotes.forEach(n => {
+    const p = (n.project || '').trim();
+    if (p) set.add(p);
+  });
+  return Array.from(set);
+}
+
+// Alterar pasta/projeto da nota
+async function updateNoteProject(noteId, newProject) {
+  try {
+    const cleanProject = String(newProject || '').trim() || 'Geral';
+    const response = await fetch(`/api/notes/${noteId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project: cleanProject })
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || 'Erro ao alterar a pasta da nota');
+    }
+    const updated = await response.json();
+    
+    // Atualizar na memória
+    const idx = allNotes.findIndex(n => n.id === noteId);
+    if (idx !== -1) {
+      allNotes[idx] = updated;
+    }
+    if (currentViewingNote && currentViewingNote.id === noteId) {
+      currentViewingNote = updated;
+      viewTag.textContent = cleanProject.toUpperCase();
+    }
+
+    showToast(`Pasta alterada para “${cleanProject}” ✓`);
+    await loadNotes();
+  } catch (err) {
+    showToast(err.message || 'Não foi possível alterar a pasta', true);
+    if (currentViewingNote && changeNoteProject) {
+      changeNoteProject.value = currentViewingNote.project || 'Geral';
+    }
+  }
+}
+
 // Abrir modal de leitura completa com o tema dinâmico da nota
 function openViewModal(note, themeClass = null) {
   currentViewingNote = note;
@@ -279,6 +365,45 @@ function openViewModal(note, themeClass = null) {
 
   viewTag.className = 'tag';
   viewTag.textContent = (note.project || 'Geral').toUpperCase();
+
+  // Configurar seletor de pasta/projeto
+  if (changeNoteProject) {
+    changeNoteProject.innerHTML = '';
+    const knownProjects = getAllKnownProjects();
+    const currentProject = (note.project || 'Geral').trim();
+    if (!knownProjects.some(p => p.toLowerCase() === currentProject.toLowerCase())) {
+      knownProjects.push(currentProject);
+    }
+    knownProjects.forEach(proj => {
+      const opt = document.createElement('option');
+      opt.value = proj;
+      opt.textContent = proj;
+      if (proj.toLowerCase() === currentProject.toLowerCase()) {
+        opt.selected = true;
+      }
+      changeNoteProject.appendChild(opt);
+    });
+
+    const newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = '＋ Nova pasta...';
+    changeNoteProject.appendChild(newOpt);
+
+    changeNoteProject.onchange = async () => {
+      const val = changeNoteProject.value;
+      if (val === '__new__') {
+        const customName = window.prompt('Nome da nova pasta / projeto:');
+        if (!customName || !customName.trim()) {
+          changeNoteProject.value = currentViewingNote ? (currentViewingNote.project || 'Geral') : 'Geral';
+          return;
+        }
+        await updateNoteProject(currentViewingNote.id, customName.trim());
+        if (currentViewingNote) openViewModal(currentViewingNote, themeClass);
+      } else {
+        await updateNoteProject(currentViewingNote.id, val);
+      }
+    };
+  }
 
   const formattedDate = new Date(note.updated_at || note.created_at).toLocaleString('pt-PT', {
     day: 'numeric',
@@ -313,6 +438,12 @@ viewCopyBtn?.addEventListener('click', () => {
   navigator.clipboard.writeText(currentViewingNote.content || '')
     .then(() => showToast('Texto copiado para a área de transferência ✓'))
     .catch(() => showToast('Não foi possível copiar'));
+});
+
+// Editar a partir do modal de leitura
+viewEditBtn?.addEventListener('click', () => {
+  if (!currentViewingNote) return;
+  openEditModal(currentViewingNote);
 });
 
 // Eliminar a partir do modal de leitura
@@ -591,7 +722,7 @@ function updateDynamicMetrics(notes) {
   }
 }
 
-// Guardar nova nota
+// Guardar nota (Criar ou Atualizar)
 document.querySelector('#save-note')?.addEventListener('click', async () => {
   const title = titleInput.value.trim();
   if (!title) {
@@ -603,25 +734,44 @@ document.querySelector('#save-note')?.addEventListener('click', async () => {
   const youtube_url = youtubeInput.value.trim() || null;
 
   try {
-    const response = await fetch('/api/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, content, project, youtube_url })
-    });
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error || 'Erro ao guardar a nota');
+    if (editingNoteId) {
+      // Atualizar nota existente
+      const response = await fetch(`/api/notes/${editingNoteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, project, youtube_url })
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao atualizar a nota');
+      }
+      const updated = await response.json();
+      closeModal();
+      showToast('Nota atualizada com sucesso ✓');
+      await loadNotes();
+      openViewModal(updated);
+    } else {
+      // Criar nova nota
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, project, youtube_url })
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao guardar a nota');
+      }
+
+      closeModal();
+      titleInput.value = '';
+      contentInput.value = '';
+      youtubeInput.value = '';
+
+      showToast('Nota guardada no teu rastro ✓');
+      await loadNotes();
     }
-
-    closeModal();
-    titleInput.value = '';
-    contentInput.value = '';
-    youtubeInput.value = '';
-
-    showToast('Nota guardada no teu rastro ✓');
-    await loadNotes();
   } catch (error) {
-    showToast(error.message || 'Não foi possível guardar a nota');
+    showToast(error.message || 'Não foi possível guardar a nota', true);
   }
 });
 
