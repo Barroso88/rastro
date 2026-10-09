@@ -173,15 +173,47 @@ async function fetchUrlContent(url) {
   };
 }
 
-async function handleImport(req, res) {
+async function handleTextImport(req, res) {
   try {
-    const url = String(req.body?.url || '').trim();
-    if (!url) {
-      return res.status(400).json({ error: 'Indica um URL válido (GitHub, fórum XDA, tutorial ou artigo web).' });
+    const text = String(req.body?.text || req.body?.url || '').trim();
+    const project = String(req.body?.project || 'DIY').trim();
+    if (!text || text.length < 15) {
+      return res.status(400).json({ error: 'Cola um texto com pelo menos 15 carateres para a IA poder analisar.' });
     }
 
-    console.log(`[Rastro Import] A recolher conteúdo de: ${url}`);
-    const sourceData = await fetchUrlContent(url);
+    console.log(`[Rastro AI Text] A processar texto colado (${text.length} carateres)...`);
+    const guide = await organizeGuide({
+      sourceName: 'Anotações / Texto Bruto',
+      sourceUrl: '',
+      content: text
+    });
+
+    const saved = await pool.query(
+      'INSERT INTO notes (title, content, project, tags) VALUES ($1, $2, $3, $4) RETURNING *',
+      [guide.title || 'Guia Organizado com IA', guide.content, project || 'DIY', ['diy', 'ia', 'organizado']]
+    );
+
+    res.status(201).json(saved.rows[0]);
+  } catch (error) {
+    console.error('Erro ao organizar texto com IA:', error.message);
+    res.status(500).json({ error: error.message || 'Falha ao organizar texto com IA.' });
+  }
+}
+
+async function handleImport(req, res) {
+  try {
+    const rawInput = String(req.body?.url || req.body?.text || '').trim();
+    if (!rawInput) {
+      return res.status(400).json({ error: 'Indica um URL válido (GitHub, fórum XDA, tutorial) ou cola o texto desejado.' });
+    }
+
+    // Se o utilizador colou texto bruto diretamente no campo de URL (não começa por http:// ou https://)
+    if (!/^https?:\/\//i.test(rawInput)) {
+      return handleTextImport(req, res);
+    }
+
+    console.log(`[Rastro Import] A recolher conteúdo de: ${rawInput}`);
+    const sourceData = await fetchUrlContent(rawInput);
 
     console.log(`[Rastro Import] Conteúdo obtido (${sourceData.content.length} carateres). A estruturar com IA...`);
     const guide = await organizeGuide(sourceData);
@@ -198,6 +230,7 @@ async function handleImport(req, res) {
   }
 }
 
+app.post('/api/import/text', handleTextImport);
 app.post('/api/import/url', handleImport);
 app.post('/api/import/github', handleImport);
 

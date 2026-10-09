@@ -1152,6 +1152,44 @@ body.dark ::placeholder {
   resize: vertical;
 }
 
+.ai-tabs {
+  display: flex;
+  gap: 6px;
+  background: #e9e7e2;
+  padding: 4px;
+  border-radius: 9px;
+  margin: 16px 0 16px;
+}
+
+.ai-tab {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #55575e;
+  font: 600 12px 'DM Sans', sans-serif;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.ai-tab.active {
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.import-hint {
+  font-size: 11px;
+  color: #65676f;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -1707,6 +1745,25 @@ body.dark .modal {
 
 body.dark .modal-lg {
   border-top: 5px solid var(--card-accent, var(--coral));
+}
+
+body.dark .ai-tabs {
+  background: #1c1d22;
+  border: 1px solid #33343c;
+}
+
+body.dark .ai-tab {
+  color: #a9aaaf;
+}
+
+body.dark .ai-tab.active {
+  background: #2b2d35;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+body.dark .import-hint {
+  color: #92939a;
 }
 
 body.dark .modal-close {

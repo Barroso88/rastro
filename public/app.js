@@ -674,12 +674,78 @@ document.querySelector('#nav-recent')?.addEventListener('click', (e) => {
   showCategoryView('all');
 });
 
-// Importar com IA (GitHub, XDA, Fóruns, Tutoriais Web)
+// Abas do Assistente IA (Link vs Colar Texto)
+let currentAiImportMode = 'link';
+const tabLinkBtn = document.querySelector('#tab-link-btn');
+const tabTextBtn = document.querySelector('#tab-text-btn');
+const aiLinkSection = document.querySelector('#ai-link-section');
+const aiTextSection = document.querySelector('#ai-text-section');
+const aiTextContent = document.querySelector('#ai-text-content');
+const aiTextProject = document.querySelector('#ai-text-project');
+
+tabLinkBtn?.addEventListener('click', () => {
+  currentAiImportMode = 'link';
+  tabLinkBtn.classList.add('active');
+  tabTextBtn?.classList.remove('active');
+  if (aiLinkSection) aiLinkSection.style.display = 'block';
+  if (aiTextSection) aiTextSection.style.display = 'none';
+  githubInput?.focus();
+});
+
+tabTextBtn?.addEventListener('click', () => {
+  currentAiImportMode = 'text';
+  tabTextBtn.classList.add('active');
+  tabLinkBtn?.classList.remove('active');
+  if (aiLinkSection) aiLinkSection.style.display = 'none';
+  if (aiTextSection) aiTextSection.style.display = 'block';
+  aiTextContent?.focus();
+});
+
+// Importar / Organizar com IA (Link da Web ou Texto Bruto)
 document.querySelector('#import-github')?.addEventListener('click', async () => {
+  const button = document.querySelector('#import-github');
+
+  // Modo 1: Colar Texto Bruto
+  if (currentAiImportMode === 'text') {
+    const text = aiTextContent?.value.trim() || '';
+    if (!text) {
+      aiTextContent?.focus();
+      return;
+    }
+    const project = aiTextProject?.value.trim() || 'DIY';
+
+    button.disabled = true;
+    button.innerHTML = 'A estruturar texto com IA…';
+
+    try {
+      const response = await fetch('/api/import/text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, project })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível organizar o texto');
+
+      closeGithubModal();
+      if (aiTextContent) aiTextContent.value = '';
+      showToast('Texto organizado com sucesso em guia técnico! ✓');
+      await loadNotes();
+      showCategoryView(project);
+      openViewModal(data);
+    } catch (error) {
+      console.error('Erro na organização de texto com IA:', error);
+      showToast(error.message || 'Erro ao organizar texto com IA', true);
+    } finally {
+      button.disabled = false;
+      button.innerHTML = 'Organizar com IA <span>⌁</span>';
+    }
+    return;
+  }
+
+  // Modo 2: Link da Web (GitHub, XDA, Fóruns, Artigos)
   const url = githubInput.value.trim();
   if (!url) return githubInput.focus();
 
-  const button = document.querySelector('#import-github');
   button.disabled = true;
   button.innerHTML = 'A analisar e organizar com IA…';
 
@@ -704,7 +770,7 @@ document.querySelector('#import-github')?.addEventListener('click', async () => 
     showToast(error.message || 'Erro ao importar com IA', true);
   } finally {
     button.disabled = false;
-    button.innerHTML = 'Organizar guia com IA <span>⌁</span>';
+    button.innerHTML = 'Organizar com IA <span>⌁</span>';
   }
 });
 
